@@ -5,6 +5,9 @@ use serde_json::json;
 use task::spawn_blocking;
 use tokio::*;
 
+mod cobalt;
+
+
 fn main() {
     let async_runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -18,7 +21,7 @@ fn main() {
 async fn cobalt_test() -> Result<()> { 
     let client = reqwest::Client::new();
 
-    client.post("http://localhost:9000")
+    let response = client.post("http://localhost:9000")
         .header(ACCEPT, "application/json")
         .header(CONTENT_TYPE, "application/json")
         .body(json!({
@@ -28,15 +31,17 @@ async fn cobalt_test() -> Result<()> {
         .send()
         .await?;
 
+    response.text();
+
     Ok(())
 }
 
-async fn ping_test() -> Result<()> {
-    let res = reqwest::get("http://httpbin.org/get").await?;
-    println!("Status: {}", res.status());
-    println!("Headers:\n{:#?}", res.headers());
-
-    let body = res.text().await?;
-    println!("Body:\n{}", body);
-    Ok(())
-}
+// async fn ping_test() -> Result<()> {
+//     let res = reqwest::get("http://httpbin.org/get").await?;
+//     println!("Status: {}", res.status());
+//     println!("Headers:\n{:#?}", res.headers());
+// 
+//     let body = res.text().await?;
+//     println!("Body:\n{}", body);
+//     Ok(())
+// }

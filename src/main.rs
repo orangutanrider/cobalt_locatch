@@ -1,6 +1,7 @@
 use serde::*;
 use reqwest::*;
 use reqwest::header::*;
+use serde_json::json;
 use task::spawn_blocking;
 use tokio::*;
 
@@ -10,7 +11,24 @@ fn main() {
         .build()
         .unwrap();
 
-    async_runtime.block_on(ping_test());
+    //async_runtime.block_on(ping_test());
+    async_runtime.block_on(cobalt_test());
+}
+
+async fn cobalt_test() -> Result<()> { 
+    let client = reqwest::Client::new();
+
+    client.post("http://localhost:9000")
+        .header(ACCEPT, "application/json")
+        .header(CONTENT_TYPE, "application/json")
+        .body(json!({
+            "url": "https://www.youtube.com/watch?v=yQM1KM66QT4",
+            "downloadMode": "audio"
+        }).to_string())
+        .send()
+        .await?;
+
+    Ok(())
 }
 
 async fn ping_test() -> Result<()> {

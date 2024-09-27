@@ -56,10 +56,11 @@ macro_rules! apply_field {($self:ident, $settings:ident, $field:ident) => {
 
 impl SerialRequest {
     pub(crate) fn apply_macro(mut self, settings: &SerialRequest) {
+        // apply url field
         self.url = match self.url {
             Some(v) => Some(v),
             None => match &settings.url {
-                Some(v) => Some(v.to_string()),
+                Some(v) => Some(v.clone()),
                 None => {
                     warn!("There was an entry with no URL and no URL able to be given to it.");
                     None

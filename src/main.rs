@@ -1,5 +1,8 @@
 
 use std::future::Future;
+use std::path::PathBuf;
+use std::env;
+use std::fs;
 
 use serde::*;
 use reqwest::*;
@@ -7,6 +10,7 @@ use reqwest::header::*;
 use serde_json::json;
 use task::spawn_blocking;
 use tokio::*;
+use clap::Parser;
 
 mod input;
 mod cobalt;
@@ -15,8 +19,35 @@ use cobalt::*;
 use std::result::Result as StdResult;
 use reqwest::Result as ReqResult;
 
+use log::error;
+
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Cli {
+    #[arg(short, long, value_name = "FILE")]
+    input: PathBuf,
+    #[arg(short, long, value_name = "PATH")]
+    output: Option<PathBuf>,
+}
 
 fn main() {
+    env_logger::init();
+    let cli = Cli::parse();
+
+    let input_path = cli.input;
+    println!("{:?}", input_path);
+
+    let input = match fs::read_to_string(input_path) {
+        Ok(ok) => ok,
+        Err(err) => {
+            error!("{}", err);
+            return;
+        },
+    };
+    println!("File contents: {}", input);
+
+    
+
     let async_runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
@@ -24,6 +55,10 @@ fn main() {
 
     //async_runtime.block_on(ping_test());
     //async_runtime.block_on(cobalt_test());
+}
+
+fn take_input() {
+
 }
 
 // Pseudocode

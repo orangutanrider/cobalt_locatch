@@ -11,7 +11,7 @@ macro_rules! into_cobalt_response {($enum:ident, $t:ty, $json:ident) => {{
         return Ok(CobaltResponse::$enum(response));
 }};}
 
-pub(crate) fn into_response(json_response: &str) -> Result<CobaltResponse, ()> {
+pub(crate) fn deserialize_cobalt(json_response: &str) -> Result<CobaltResponse, ()> {
     let lookup: HashMap<String, Value> = match serde_json::from_str(json_response) {
         Ok(ok) => ok,
         Err(_) => return Err(()),
@@ -35,7 +35,7 @@ pub(crate) fn into_response(json_response: &str) -> Result<CobaltResponse, ()> {
     }
 } 
 
-enum CobaltResponse {
+pub(crate) enum CobaltResponse {
     Error(ErrorResponse),
     Picker(PickerResponse),
     Redirect(RedirectResponse),

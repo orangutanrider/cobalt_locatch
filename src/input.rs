@@ -1,5 +1,6 @@
 use serde::{ Deserialize, Serialize };
 use log::warn;
+use serde_json::Error as JsonError;
 
 // pub(crate) mod default {
 //     pub(crate) fn video_quality() -> String            { "1080".to_owned() }
@@ -21,6 +22,12 @@ use log::warn;
 pub(crate) struct SerialInput {
     settings: Option<SerialRequestMacro>,
     requests: Vec<SerialRequest>,
+}
+impl SerialInput {
+    #[inline]
+    fn from_json(json:&str) -> Result<Self, JsonError> {
+        return serde_json::de::from_str::<Self>(json);
+    }
 }
 
 type SerialRequestMacro = SerialRequest;
@@ -85,5 +92,56 @@ impl SerialRequest {
 
     pub(crate) fn to_json(&self) -> serde_json::Result<String> {
         serde_json::to_string(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_input() {
+        let input = stringify!(
+            {
+                "requests":[]
+            }
+        );
+
+        match SerialInput::from_json(input) {
+            Ok(_) => return /* Test succesful */,
+            Err(_) => panic!("Failed to deserialize"),
+        };
+    }
+
+    #[test]
+    fn empty_json() {
+        let input = stringify!(
+            {
+
+            }
+        );
+
+        match SerialInput::from_json(input) {
+            Ok(_) => panic!("Expected to be unable to deserialze, but did deserialize"),
+            Err(_) => return /* Test succesful */,
+        };
+    }
+
+    #[test]
+    fn simple_input() {
+        let input = stringify!(
+            {
+                "requests":[
+                    {
+                        "url":"https://www.youtube.com/watch?v=YgBaf3onLWs"
+                    }
+                ]
+            }
+        );
+
+        match SerialInput::from_json(input) {
+            Ok(_) => return /* Test succesful */,
+            Err(_) => panic!("Failed to deserialize"),
+        };
     }
 }

@@ -17,6 +17,9 @@ mod input;
 mod cobalt;
 use cobalt::*;
 
+#[cfg(feature = "api-test")]
+mod api_test;
+
 use serde_json::Error as JsonError;
 use std::result::Result as StdResult;
 use reqwest::Result as ReqResult;
@@ -112,17 +115,15 @@ fn take_input() {
 //     Ok(response)
 // }
 
-
-
-
 // fn to_code(json: &str) -> StdResult<CobaltResponse, ()> { ... }
 // into_response(json)
 
 // async fn to_json(response: Response) -> impl Future<Output = ReqResult<String>> { ... }
 // response.text()
 
-async fn post_cobalt(client: &Client, post: &str, body: &'static str) -> impl Future<Output = ReqResult<Response>> { 
-    return client.post(post)
+#[inline]
+pub(crate) async fn post_cobalt(client: &Client, url: &str, body: &'static str) -> impl Future<Output = ReqResult<Response>> { 
+    return client.post(url)
         .header(ACCEPT, "application/json")
         .header(CONTENT_TYPE, "application/json")
         .body(body)

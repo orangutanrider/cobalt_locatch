@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::env;
 use std::fs;
 
+use input::SerialInput;
 use serde::*;
 use reqwest::*;
 use reqwest::header::*;
@@ -16,10 +17,10 @@ mod input;
 mod cobalt;
 use cobalt::*;
 
+use serde_json::Error as JsonError;
 use std::result::Result as StdResult;
 use reqwest::Result as ReqResult;
-
-use log::error;
+use reqwest::Error as ReqError;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -38,16 +39,31 @@ fn main() {
     println!("{:?}", input_path);
 
     let input = match fs::read_to_string(input_path) {
-        Ok(ok) => ok,
+        Ok(ok) => {
+            println!("File recieved");
+            ok
+        },
         Err(err) => {
-            error!("{}", err);
+            print!("Error with recieving input file: ");
+            println!("{}", err);
+            println!("Exiting due to error");
             return;
         },
     };
-    println!("File contents: {}", input);
 
+    let input = match serde_json::de::from_str::<SerialInput>(&input) {
+        Ok(ok) => {
+            println!("Deserialization succesful");
+            ok
+        },
+        Err(err) => {
+            print!("Error with deserialization of input: ");
+            println!("{}", err);
+            println!("Exiting due to error");
+            return;
+        },
+    };
     
-
     let async_runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()

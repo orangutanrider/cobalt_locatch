@@ -2,6 +2,7 @@ use lib::*;
 use reqwest::Client;
 
 const URL: &str = "http://localhost:9000";
+//const URL: &str = "https://api.cobalt.orang/";
 
 fn main() {
     println!("Starting api test");
@@ -42,9 +43,14 @@ async fn get_cobalt() {
 }
 
 async fn tunnel_response(response: TunnelResponse) {
+    println!("{}", response.filename);
+    println!("{}", response.url);
     let response = match reqwest::get(&response.url).await {
         Ok(ok) => ok,
-        Err(err) => todo!(),
+        Err(err) => {
+            println!("{}", err);
+            todo!()
+        },
     };
 
     let response = match response.bytes().await {
@@ -87,7 +93,13 @@ async fn post_entrance_audio(client: &Client) {
     match response {
         PostResponse::Error(response) => todo!(),
         PostResponse::Picker(response) => todo!(),
-        PostResponse::Redirect(response) => tunnel_response(response).await,
-        PostResponse::Tunnel(response) => tunnel_response(response).await,
+        PostResponse::Redirect(response) => {
+            println!("Redirect");
+            tunnel_response(response).await
+        },
+        PostResponse::Tunnel(response) => {
+            println!("Tunnel");
+            tunnel_response(response).await
+        },
     };
 }

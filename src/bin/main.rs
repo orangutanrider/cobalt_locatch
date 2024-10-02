@@ -1,9 +1,5 @@
-use lib::foobar;
-
-
-
 fn main() {
-    foobar();
+
 }
 
 /* 

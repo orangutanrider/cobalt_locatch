@@ -3,9 +3,17 @@ name = "cobalt_locatch"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "lib"
+path = "src/lib/lib.rs"
+
+[[bin]]
+name = "main"
+path = "src/bin/main.rs"
+
 [[bin]]
 name = "api_test"
-path = "src/api_test.rs"
+path = "src/bin/api_test.rs"
 
 [dependencies]
 clap = { version = "4.5.13", features = ["derive"] }

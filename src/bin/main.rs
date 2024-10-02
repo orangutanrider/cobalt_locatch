@@ -1,4 +1,12 @@
+use lib::foobar;
 
+
+
+fn main() {
+    foobar();
+}
+
+/* 
 use std::future::Future;
 use std::path::PathBuf;
 use std::env;
@@ -129,3 +137,4 @@ pub(crate) async fn post_cobalt(client: &Client, url: &str, body: &'static str) 
         .body(body)
         .send();
 }
+*/

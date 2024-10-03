@@ -2,10 +2,12 @@ use lib::*;
 
 use std::{
     fs,
-    path::PathBuf
+    path::PathBuf,
+    future::Future,
 };
 
 use clap::*;
+use reqwest::{Client, Response};
 
 macro_rules! exit_msg {($($tt:tt)*) => {
     print!("Exiting (");
@@ -113,10 +115,16 @@ fn main() {
             exit_msg!("{}", err); return;
         },
     }
-}
 
-async fn make_requests(cobalt_url: &str, input: &SerialInput) {
+    let client = Client::new();
+    println!("Making requests");
+    let len = input.requests.len();
+    let responses = make_requests(&client, &config.cobalt_url, &input, len);
 
+    println!("Waiting for responses...");
+    let responses = async_runtime.block_on(unwrap_responses(responses, len));
+    let responses = request_response_texts(responses, len);
+    let responses = unwrap_pending_texts(responses, len);
 }
 
 async fn get_cobalt(cobalt_url: &str) -> Result<(), reqwest::Error> {
@@ -154,6 +162,82 @@ async fn get_cobalt(cobalt_url: &str) -> Result<(), reqwest::Error> {
 
     println!("Cobalt version {} @commit {}", response.cobalt.version, response.git.commit);
     Ok(())
+}
+
+//type PendingRequest = impl Future<Output = Result<Response, ReqError>>;
+macro_rules! PendingRequest {() => {
+    impl Future<Output = Result<Response, ReqError>>
+};}
+
+fn make_requests(client: &Client, cobalt_url: &str, input: &SerialInput, len: usize) -> Vec<PendingRequest!()> {
+    let mut futures = Vec::with_capacity(len);
+
+    for request in input.requests.iter() {
+        match request.to_json() {
+            Ok(body) => futures.push(post_cobalt(client, cobalt_url, body)),
+            Err(err) => {
+                println!("Error: {}", err);
+                println!("A request could not be serialized"); 
+                println!("Logging unimplemented"); //todo!
+                //warn!("");
+                continue;
+            },
+        };
+    }
+
+    return futures;
+}
+
+async fn unwrap_responses(requests: Vec<PendingRequest!()>, len: usize) -> Vec<Response> {
+    let mut responses = Vec::with_capacity(len);
+
+    for future in requests.into_iter() {
+        match future.await {
+            Ok(ok) => responses.push(ok),
+            Err(err) => {
+                println!("Error: {}", err);
+                println!("A response was unable to be recieved"); 
+                println!("Logging unimplemented"); //todo!
+                //warn!("");
+                continue;
+            },
+        };
+    }
+
+    return responses;
+}
+
+macro_rules! PendingText {() => {
+    impl Future<Output = Result<String, ReqError>>
+};}
+
+fn request_response_texts(responses: Vec<Response>, len: usize) -> Vec<PendingText!()> {
+    let mut futures = Vec::with_capacity(len);
+
+    for response in responses.into_iter() {
+        futures.push(response.text());
+    }
+
+    return futures;
+}
+
+async fn unwrap_pending_texts(pending_texts: Vec<PendingText!()>, len: usize) -> Vec<String> {
+    let mut texts = Vec::with_capacity(len);
+
+    for text in pending_texts.into_iter() {
+        match text.await {
+            Ok(ok) => texts.push(ok),
+            Err(err) => {
+                println!("Error: {}", err);
+                println!("Failed to get a response's text"); 
+                println!("Logging unimplemented"); //todo!
+                //warn!("");
+                continue;
+            },
+        }
+    }
+
+    return texts;
 }
 
 // Pseudocode

@@ -1,5 +1,5 @@
 use serde::{ Deserialize, Serialize };
-use log::warn;
+//use log::warn;
 
 #[derive(Deserialize)]
 pub struct SerialInput {
@@ -21,8 +21,9 @@ impl SerialInput {
         }
     }
 
-    // Thereotically more performant
+    // Thereotically more performant.
     // Instead of cloning state at each step of the iteration, the entire vec is simply cloned and then values are fed in as state.
+    // Un-tested.
     pub fn apply_macro_vec_clone(&mut self) {
         let Some(marco) = &self.marco else {
             // There is no macro to apply
@@ -40,6 +41,7 @@ impl SerialInput {
     }
 
     /// Apply macro onto requests in parallel
+    /// Un-implemented
     pub fn apply_macro_par() {
         todo!()
     }
@@ -87,7 +89,7 @@ impl SerialRequest {
                 Some(v) => Some(v.clone()),
                 None => {
                     println!("There was an entry with no URL and no URL able to be given to it"); todo!("Logging unimplemented");
-                    warn!("There was an entry with no URL and no URL able to be given to it");
+                    //warn!("There was an entry with no URL and no URL able to be given to it");
                     None
                 },
             },
@@ -117,7 +119,7 @@ impl SerialRequest {
                 Some(v) => Some(v.clone()),
                 None => {
                     println!("There was an entry with no URL and no URL able to be given to it"); todo!("Logging unimplemented");
-                    warn!("There was an entry with no URL and no URL able to be given to it");
+                    //warn!("There was an entry with no URL and no URL able to be given to it");
                     None
                 },
             },

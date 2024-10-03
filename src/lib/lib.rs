@@ -11,3 +11,5 @@ pub use cobalt_get::*;
 pub use cobalt_post::*;
 pub use input::*;
 pub use config::*;
+
+pub use reqwest::Error as ReqError;

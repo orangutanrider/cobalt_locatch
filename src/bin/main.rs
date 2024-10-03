@@ -1,87 +1,151 @@
-fn main() {
+use lib::*;
 
-}
+use std::{
+    fs,
+    path::PathBuf
+};
 
-/* 
-use std::future::Future;
-use std::path::PathBuf;
-use std::env;
-use std::fs;
+use clap::*;
 
-use input::SerialInput;
-use serde::*;
-use reqwest::*;
-use reqwest::header::*;
-use serde_json::json;
-use task::spawn_blocking;
-use tokio::*;
-use clap::Parser;
-
-mod input;
-mod cobalt;
-use cobalt::*;
-
-#[cfg(feature = "api-test")]
-mod api_test;
-
-use serde_json::Error as JsonError;
-use std::result::Result as StdResult;
-use reqwest::Result as ReqResult;
-use reqwest::Error as ReqError;
+macro_rules! exit_msg {($($tt:tt)*) => {
+    print!("Exiting (");
+    print!($($tt)*);
+    println!(")")
+};}
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
     #[arg(short, long, value_name = "FILE")]
     input: PathBuf,
+
+    #[arg(short, long, value_name = "FILE")]
+    config: Option<PathBuf>, 
+
     #[arg(short, long, value_name = "PATH")]
     output: Option<PathBuf>,
 }
 
-fn main() {
-    env_logger::init();
+const DEFAULT_CONFIG_PATH: &str = "cobalt_config.json";
+
+fn main() {    
     let cli = Cli::parse();
 
-    let input_path = cli.input;
-    println!("{:?}", input_path);
+    println!("{:?}", cli.input);
 
-    let input = match fs::read_to_string(input_path) {
-        Ok(ok) => {
-            println!("File recieved");
-            ok
+    // Recieve config
+    let config = match cli.config {
+        Some(config) => {
+            match fs::read_to_string(config) {
+                Ok(ok) => {
+                    println!("Config file recieved");
+                    ok
+                },
+                Err(err) => {
+                    println!("Error with config file");
+                    exit_msg!("{}", err); return;
+                },
+            }
         },
-        Err(err) => {
-            print!("Error with recieving input file: ");
-            println!("{}", err);
-            println!("Exiting due to error");
-            return;
+        None => {
+            match fs::read_to_string(DEFAULT_CONFIG_PATH) {
+                Ok(ok) => {
+                    println!("Config file recieved");
+                    ok
+                },
+                Err(err) => {
+                    println!("Error with config file");
+                    exit_msg!("{}", err); return;
+                },
+            }
         },
     };
 
-    let input = match serde_json::de::from_str::<SerialInput>(&input) {
+    // Deserialize config
+    let config = match SerialConfig::from_json(&config) {
+        Ok(ok) => ok,
+        Err(err) => {
+            println!("Error with deserialization of config file");
+            exit_msg!("{}", err); return;
+        },
+    };
+
+    // Recieve input
+    let input = match fs::read_to_string(&cli.input) {
         Ok(ok) => {
-            println!("Deserialization succesful");
+            println!("Input file recieved");
             ok
         },
         Err(err) => {
-            print!("Error with deserialization of input: ");
-            println!("{}", err);
-            println!("Exiting due to error");
-            return;
+            println!("Error with input file");
+            exit_msg!("{}", err); return;
         },
     };
-    
-    let async_runtime = tokio::runtime::Builder::new_multi_thread()
+
+    // Deserialize input
+    let input = match SerialInput::from_json(&input) {
+        Ok(ok) => ok,
+        Err(err) => {
+            println!("Error with deserialization of input file");
+            exit_msg!("{}", err); return;
+        },
+    };
+
+    // start tokio
+    let async_runtime = match tokio::runtime::Builder::new_multi_thread()
         .enable_all()
-        .build()
-        .unwrap();
+        .build() 
+    {
+        Ok(ok) => ok,
+        Err(err) => {
+            println!("Failed to start tokio async runtime");
+            exit_msg!("{}", err); return;
+        },
+    };
 
-    //async_runtime.block_on(ping_test());
-    //async_runtime.block_on(cobalt_test());
+    match async_runtime.block_on(get_cobalt(&config.cobalt_url)) {
+        Ok(_) => {/* Do nothing */},
+        Err(err) => {
+            exit_msg!("{}", err); return;
+        },
+    }
 }
 
-fn take_input() {
+async fn get_cobalt(cobalt_url: &str) -> Result<(), reqwest::Error> {
+    let response = match reqwest::get(cobalt_url).await {
+        Ok(ok) => {
+            println!("Succesfully connected to cobalt");
+            ok
+        },
+        Err(err) => {
+            println!("Couldn't connect to cobalt");
+            return Err(err);
+        },
+    };
 
+    let response = match response.text().await {
+        Ok(ok) => ok,
+        Err(err) => {
+            println!("Error: {}", err);
+            println!("Couldn't get the response text from cobalt");
+            println!("Since cobalt was succesfully connected to, will try to continue execution anyways");
+            return Ok(())
+        },
+    };
+
+    let response = match GetResponse::from_json(&response) {
+        Ok(ok) => ok,
+        Err(err) => {
+            println!("Error: {}", err);
+            println!("Failed to deserialze cobalt response");
+            println!("This could indicate that an incompatible version of cobalt is being connected to");
+            println!("Will try to continue execution anyways");
+            return Ok(())
+        },
+    };
+
+    println!("Cobalt version {} @commit {}", response.cobalt.version, response.git.commit);
+    Ok(())
 }
 
 // Pseudocode
@@ -101,36 +165,4 @@ fn take_input() {
     
     Log results
     END
-*/
-
-// async fn post_cobalt(body: String) { 
-//     let client = reqwest::Client::new();
-// 
-//     let response = client.post("http://localhost:9000")
-//         .header(ACCEPT, "application/json")
-//         .header(CONTENT_TYPE, "application/json")
-//         .body(json!({
-//             "url": "https://www.youtube.com/watch?v=yQM1KM66QT4",
-//             "downloadMode": "audio"
-//         }).to_string())
-//         .send()
-//         .await?;
-// 
-//     Ok(response)
-// }
-
-// fn to_code(json: &str) -> StdResult<CobaltResponse, ()> { ... }
-// into_response(json)
-
-// async fn to_json(response: Response) -> impl Future<Output = ReqResult<String>> { ... }
-// response.text()
-
-#[inline]
-pub(crate) async fn post_cobalt(client: &Client, url: &str, body: &'static str) -> impl Future<Output = ReqResult<Response>> { 
-    return client.post(url)
-        .header(ACCEPT, "application/json")
-        .header(CONTENT_TYPE, "application/json")
-        .body(body)
-        .send();
-}
 */

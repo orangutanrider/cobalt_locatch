@@ -18,10 +18,16 @@ fn main() {
     println!("Starting download test");
     println!("Url is {}", URL);
 
-    let async_runtime = tokio::runtime::Builder::new_multi_thread()
+    let async_runtime = match tokio::runtime::Builder::new_multi_thread()
         .enable_all()
-        .build()
-        .unwrap();
+        .build() 
+    {
+        Ok(ok) => ok,
+        Err(err) => {
+            println!("Failed to start tokio async runtime");
+            panic!("{}", err);
+        },
+    };
 
     async_runtime.block_on(get_cobalt());
 

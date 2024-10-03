@@ -1,7 +1,11 @@
 //! Cobalt response representation
 
-use std::{io::Write, str::FromStr};
-use std::collections::HashMap;
+use std::{
+    str::FromStr,
+    collections::HashMap,
+    future::Future,
+};
+
 use serde::Deserialize;
 use serde_json::{Number, Value};
 use reqwest::{
@@ -10,7 +14,6 @@ use reqwest::{
     Response,
     Result as ReqResult
 };
-use std::future::Future;
 
 macro_rules! into_response {($enum:ident, $t:ty, $json:ident) => {{
         let response: $t = match serde_json::from_str($json) {
@@ -105,28 +108,6 @@ pub struct TunnelResponse {
     pub url: String,
     pub filename: String,
 }
-impl TunnelResponse {
-    pub async fn download_and_write(&self) -> Result<(), ()> {
-        let response = match reqwest::get(&self.url).await {
-            Ok(ok) => ok,
-            Err(err) => todo!(),
-        };
-
-        let response = match response.bytes().await {
-            Ok(ok) => ok,
-            Err(err) => todo!(),
-        };
-
-        match std::fs::write(&self.filename, response) {
-            Ok(ok) => ok,
-            Err(err) => {
-                panic!("{}", err);
-            },
-        };
-        
-        Ok(())
-    }
-}
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -135,11 +116,6 @@ pub struct PickerResponse {
     pub audio: Option<String>,
     pub audio_filename: Option<String>,
     pub picker: Vec<PickerObj>,
-}
-impl PickerResponse {
-    pub async fn download_and_write(&self) -> Result<(), ()> {
-        todo!();
-    }
 }
 
 pub enum PickerType {
@@ -166,9 +142,4 @@ pub struct PickerObj {
     pub kind: String,
     pub url: String, 
     pub thumb: Option<String>,
-}
-impl PickerObj {
-    pub async fn download_and_write(&self) -> Result<(), ()> {
-        todo!();
-    }
 }

@@ -6,15 +6,11 @@ use log::warn;
 
 #[derive(Deserialize)]
 pub struct SerialInput {
-    settings: Option<SerialRequestMacro>,
+    #[serde(alias = "macro")]
+    marco: Option<SerialRequestMacro>,
     requests: Vec<SerialRequest>,
 }
-impl SerialInput {
-    #[inline]
-    fn from_json(json:&str) -> Result<Self, JsonError> {
-        return serde_json::de::from_str::<Self>(json);
-    }
-}
+impl_from_json!(SerialInput);
 
 type SerialRequestMacro = SerialRequest;
 #[derive(Deserialize, Serialize)]
@@ -55,6 +51,7 @@ impl SerialRequest {
             None => match &settings.url {
                 Some(v) => Some(v.clone()),
                 None => {
+                    todo!("Logging unimplemented");
                     warn!("There was an entry with no URL and no URL able to be given to it.");
                     None
                 },
@@ -75,15 +72,14 @@ impl SerialRequest {
         apply_field!(self, settings, tiktok_h265);
         apply_field!(self, settings, twitter_gif);
     }
-
-    pub fn to_json(&self) -> serde_json::Result<String> {
-        serde_json::to_string(self)
-    }
 }
+impl_to_json!(SerialRequest);
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::FromJson;
 
     #[test]
     fn empty_input() {

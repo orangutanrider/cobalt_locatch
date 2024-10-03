@@ -83,13 +83,15 @@ fn main() {
     };
 
     // Deserialize input
-    let input = match SerialInput::from_json(&input) {
+    let mut input = match SerialInput::from_json(&input) {
         Ok(ok) => ok,
         Err(err) => {
             println!("Error with deserialization of input file");
             exit_msg!("{}", err); return;
         },
     };
+
+    input.apply_macro();
 
     // start tokio
     let async_runtime = match tokio::runtime::Builder::new_multi_thread()
@@ -103,12 +105,18 @@ fn main() {
         },
     };
 
+    println!("Attempting to connect to cobalt instance");
+    println!("@ {}", &config.cobalt_url);
     match async_runtime.block_on(get_cobalt(&config.cobalt_url)) {
         Ok(_) => {/* Do nothing */},
         Err(err) => {
             exit_msg!("{}", err); return;
         },
     }
+}
+
+async fn make_requests(cobalt_url: &str, input: &SerialInput) {
+
 }
 
 async fn get_cobalt(cobalt_url: &str) -> Result<(), reqwest::Error> {
@@ -137,7 +145,7 @@ async fn get_cobalt(cobalt_url: &str) -> Result<(), reqwest::Error> {
         Ok(ok) => ok,
         Err(err) => {
             println!("Error: {}", err);
-            println!("Failed to deserialze cobalt response");
+            println!("Failed to deserialize cobalt response");
             println!("This could indicate that an incompatible version of cobalt is being connected to");
             println!("Will try to continue execution anyways");
             return Ok(())

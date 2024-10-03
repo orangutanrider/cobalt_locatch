@@ -12,8 +12,8 @@ name = "main"
 path = "src/bin/main.rs"
 
 [[bin]]
-name = "api_test"
-path = "src/bin/api_test.rs"
+name = "download_test"
+path = "src/bin/download_test.rs"
 
 [dependencies]
 clap = { version = "4.5.13", features = ["derive"] }

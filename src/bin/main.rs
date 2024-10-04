@@ -148,6 +148,8 @@ fn main() {
     async_runtime.block_on(tun_future);
     async_runtime.block_on(picker_future);
 
+    let tunnel_downloads = start_download_tunnels(tunnels.iter(), len);
+    // wait downloads
 }
 
 // todo!
@@ -169,36 +171,36 @@ async fn pickers_sanitize(pickers: &mut Vec<PickerResponse>) {
     }
 }
 
-// In parallel for each response 
-    // Create empty files
-    // Make get requests
-    // Bytes into file
+enum DownloadError {
+    FileError(std::io::Error),
+    ReqwestError(reqwest::Error),
+}
 
 fn start_download_tunnels<'a>(
     iter: slice::Iter<'a, TunnelResponse>, 
     len: usize
-) -> Vec<impl Future<Output = ()> + use<'a>> {
+) -> Vec<impl Future<Output = Result<(), DownloadError>> + use<'a>> {
     let mut futures = Vec::with_capacity(len);
     
-    for tunnel in iter{ 
+    for tunnel in iter { 
         futures.push(download_tunnel(tunnel));
     }
 
     return futures;
 }
 
-async fn download_tunnel(tunnel: &TunnelResponse) {
+async fn download_tunnel(tunnel: &TunnelResponse) -> Result<(), DownloadError> {
     let stream = reqwest::get(&tunnel.url);
     let file = tokio::fs::File::create(&tunnel.filename);
 
     let mut file = match file.await {
         Ok(ok) => ok,
-        Err(err) => todo!(),
+        Err(err) => return Err(DownloadError::FileError(err)),
     };
 
     let stream = match stream.await {
         Ok(ok) => ok,
-        Err(err) => todo!(),
+        Err(err) => return Err(DownloadError::ReqwestError(err)),
     };
 
     let mut stream = stream.bytes_stream();
@@ -208,25 +210,34 @@ async fn download_tunnel(tunnel: &TunnelResponse) {
             Ok(ok) => {
                 match file.write_all(&ok).await {
                     Ok(_) => {/* Do nothing */},
-                    Err(err) => todo!(),
+                    Err(err) => return Err(DownloadError::FileError(err)),
                 };
             },
-            Err(err) => todo!(),
+            Err(err) => return Err(DownloadError::ReqwestError(err)),
         }
     }
 
     match file.flush().await {
-        Ok(_) => {/* Do nothing */},
-        Err(err) => todo!(),
+        Ok(_) => return Ok(()),
+        Err(err) => return Err(DownloadError::FileError(err)),
     }
 }
 
-async fn start_download_pickers(pickers: Vec<PickerResponse>) {
-    todo!();
+async fn start_download_pickers<'a>(
+    iter: slice::Iter<'a, PickerResponse>, 
+    len: usize
+) -> Vec<impl Future<Output = Result<(), DownloadError>> + use<'a>> {
+    let mut futures = Vec::with_capacity(len);
+
+    for picker in iter { 
+        futures.push(download_picker(picker));
+    }
+
+    return futures;
 }
 
-async fn download_picker(picker: &PickerResponse) {
-
+async fn download_picker(picker: &PickerResponse) -> Result<(), DownloadError> {
+    todo!();
 }
 
 fn handle_errors() {

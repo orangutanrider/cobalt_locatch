@@ -1,13 +1,16 @@
 use lib::*;
 
+use core::slice;
 use std::{
-    fs,
+    fs, 
+    future::Future, 
     path::PathBuf,
-    future::Future,
 };
 
 use clap::*;
 use reqwest::{Client, Response};
+use futures_util::StreamExt;
+use tokio::io::AsyncWriteExt;
 
 macro_rules! exit_msg {($($tt:tt)*) => {
     print!("Exiting (");
@@ -139,6 +142,31 @@ fn main() {
     let mut tunnels = Vec::with_capacity(len);
     seperate_deserialized(responses.into_iter(), &mut errors, &mut pickers, &mut tunnels);
 
+    // Sanitize file names
+    let tun_future = tunnels_sanitize(&mut tunnels);
+    let picker_future = pickers_sanitize(&mut pickers);
+    async_runtime.block_on(tun_future);
+    async_runtime.block_on(picker_future);
+
+}
+
+// todo!
+// File output to output directory input
+
+async fn tunnels_sanitize(tunnels: &mut Vec<TunnelResponse>) {
+    for tunnel in tunnels.iter_mut() { // par SIMD possible?
+        sanitize_filename::sanitize(&mut tunnel.filename);
+    }
+}
+
+async fn pickers_sanitize(pickers: &mut Vec<PickerResponse>) {
+    for picker in pickers.iter_mut() { // par SIMD possible?
+        let Some(audio_filename) = &mut picker.audio_filename else {
+            continue;
+        };
+
+        sanitize_filename::sanitize(audio_filename);
+    }
 }
 
 // In parallel for each response 
@@ -146,12 +174,59 @@ fn main() {
     // Make get requests
     // Bytes into file
 
-async fn download_pickers(pickers: Vec<PickerResponse>) {
+fn start_download_tunnels<'a>(
+    iter: slice::Iter<'a, TunnelResponse>, 
+    len: usize
+) -> Vec<impl Future<Output = ()> + use<'a>> {
+    let mut futures = Vec::with_capacity(len);
+    
+    for tunnel in iter{ 
+        futures.push(download_tunnel(tunnel));
+    }
+
+    return futures;
+}
+
+async fn download_tunnel(tunnel: &TunnelResponse) {
+    let stream = reqwest::get(&tunnel.url);
+    let file = tokio::fs::File::create(&tunnel.filename);
+
+    let mut file = match file.await {
+        Ok(ok) => ok,
+        Err(err) => todo!(),
+    };
+
+    let stream = match stream.await {
+        Ok(ok) => ok,
+        Err(err) => todo!(),
+    };
+
+    let mut stream = stream.bytes_stream();
+
+    while let Some(chunk) = stream.next().await {
+        match chunk {
+            Ok(ok) => {
+                match file.write_all(&ok).await {
+                    Ok(_) => {/* Do nothing */},
+                    Err(err) => todo!(),
+                };
+            },
+            Err(err) => todo!(),
+        }
+    }
+
+    match file.flush().await {
+        Ok(_) => {/* Do nothing */},
+        Err(err) => todo!(),
+    }
+}
+
+async fn start_download_pickers(pickers: Vec<PickerResponse>) {
     todo!();
 }
 
-async fn download_tunnels(tunnels: Vec<TunnelResponse>) {
-    todo!()
+async fn download_picker(picker: &PickerResponse) {
+
 }
 
 fn handle_errors() {

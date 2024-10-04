@@ -32,36 +32,30 @@ pub fn post_cobalt<T: Into<reqwest::Body>>(client: &Client, cobalt_url: &str, bo
         .send();
 }
 
-pub fn deserialize_post(json_response: &str) -> Result<PostResponse, ()> {
-    let lookup: HashMap<String, Value> = match serde_json::from_str(json_response) {
-        Ok(ok) => ok,
-        Err(_) => return Err(()),
-    };
-
-    let status = match lookup.get("status") {
-        Some(status) => status,
-        None => return Err(()),
-    };
-    let status = match status.as_str() {
-        Some(status) => status,
-        None => return Err(()),
-    };
-    let status = Status::from_str(status)?;
-
-    match status {
-        Status::Error => into_response!(Error, ErrorResponse, json_response),
-        Status::Picker => into_response!(Picker, PickerResponse, json_response),
-        Status::Redirect => into_response!(Redirect, RedirectResponse, json_response),
-        Status::Tunnel => into_response!(Tunnel, TunnelResponse, json_response),
+pub fn seperate_deserialized(
+    iter: std::vec::IntoIter<PostResponse>,
+    errors: &mut Vec<ErrorResponse>,
+    pickers: &mut Vec<PickerResponse>,
+    tunnels: &mut Vec<TunnelResponse>,
+) {
+    for response in iter { // par SIMD possible?
+        match response {
+            PostResponse::Error(error_response) => errors.push(error_response),
+            PostResponse::Picker(picker_response) => pickers.push(picker_response),
+            PostResponse::Redirect(tunnel_response) => tunnels.push(tunnel_response),
+            PostResponse::Tunnel(tunnel_response) => tunnels.push(tunnel_response),
+        }
     }
-} 
+}
 
+#[derive(Deserialize)]
 pub enum PostResponse {
     Error(ErrorResponse),
     Picker(PickerResponse),
     Redirect(RedirectResponse),
     Tunnel(TunnelResponse),
 }
+impl_from_json!(PostResponse);
 
 enum Status {
     Error,

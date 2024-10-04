@@ -124,7 +124,57 @@ fn main() {
     println!("Waiting for responses...");
     let responses = async_runtime.block_on(unwrap_responses(responses, len));
     let responses = request_response_texts(responses, len);
-    let responses = unwrap_pending_texts(responses, len);
+    let responses = async_runtime.block_on(unwrap_pending_texts(responses, len));
+    
+    println!("Responses recieved"); //log?
+    println!("Deserializing responses"); //log?
+    let responses = deserialize_responses(responses, len);
+    
+    // Technically, you only have to allocate enough space for a single vec with capacity "len", sized by whichever data structure is the largest out of the union types.
+    // Theoretically, you would create a new vector/allocation, sort the data into it (so that they are in homogenous blocks), and then create slices for each type.
+    // Hypothetically, more computation in creating the storage type, but more memory efficient afterwards.
+
+    let mut errors = Vec::with_capacity(len);
+    let mut pickers = Vec::with_capacity(len);
+    let mut tunnels = Vec::with_capacity(len);
+    seperate_deserialized(responses.into_iter(), &mut errors, &mut pickers, &mut tunnels);
+
+}
+
+// In parallel for each response 
+    // Create empty files
+    // Make get requests
+    // Bytes into file
+
+async fn download_pickers(pickers: Vec<PickerResponse>) {
+    todo!();
+}
+
+async fn download_tunnels(tunnels: Vec<TunnelResponse>) {
+    todo!()
+}
+
+fn handle_errors() {
+    todo!()
+}
+
+fn deserialize_responses(responses: Vec<String>, len: usize) -> Vec<PostResponse> {
+    let mut deserialized = Vec::with_capacity(len);
+
+    for response in responses.iter() { // par SIMD possible?
+        match PostResponse::from_json(response) {
+            Ok(ok) => deserialized.push(ok),
+            Err(err) => {
+                println!("Error: {}", err);
+                println!("A response could not be deserialized"); 
+                println!("Logging unimplemented"); //todo!
+                //warn!("");
+                continue;
+            },
+        }
+    }
+
+    return deserialized;
 }
 
 async fn get_cobalt(cobalt_url: &str) -> Result<(), reqwest::Error> {
@@ -172,7 +222,7 @@ macro_rules! PendingRequest {() => {
 fn make_requests(client: &Client, cobalt_url: &str, input: &SerialInput, len: usize) -> Vec<PendingRequest!()> {
     let mut futures = Vec::with_capacity(len);
 
-    for request in input.requests.iter() {
+    for request in input.requests.iter() { // par SIMD possible?
         match request.to_json() {
             Ok(body) => futures.push(post_cobalt(client, cobalt_url, body)),
             Err(err) => {
@@ -191,7 +241,7 @@ fn make_requests(client: &Client, cobalt_url: &str, input: &SerialInput, len: us
 async fn unwrap_responses(requests: Vec<PendingRequest!()>, len: usize) -> Vec<Response> {
     let mut responses = Vec::with_capacity(len);
 
-    for future in requests.into_iter() {
+    for future in requests.into_iter() { // par SIMD possible?
         match future.await {
             Ok(ok) => responses.push(ok),
             Err(err) => {
@@ -207,6 +257,7 @@ async fn unwrap_responses(requests: Vec<PendingRequest!()>, len: usize) -> Vec<R
     return responses;
 }
 
+//type PendingText = impl Future<Output = Result<String, ReqError>>;
 macro_rules! PendingText {() => {
     impl Future<Output = Result<String, ReqError>>
 };}
@@ -214,7 +265,7 @@ macro_rules! PendingText {() => {
 fn request_response_texts(responses: Vec<Response>, len: usize) -> Vec<PendingText!()> {
     let mut futures = Vec::with_capacity(len);
 
-    for response in responses.into_iter() {
+    for response in responses.into_iter() { // par SIMD possible?
         futures.push(response.text());
     }
 
@@ -224,7 +275,7 @@ fn request_response_texts(responses: Vec<Response>, len: usize) -> Vec<PendingTe
 async fn unwrap_pending_texts(pending_texts: Vec<PendingText!()>, len: usize) -> Vec<String> {
     let mut texts = Vec::with_capacity(len);
 
-    for text in pending_texts.into_iter() {
+    for text in pending_texts.into_iter() { // par SIMD possible?
         match text.await {
             Ok(ok) => texts.push(ok),
             Err(err) => {

@@ -130,7 +130,7 @@ async fn post_entrance_audio(client: &Client) {
         },
     };
 
-    let response = match deserialize_post(&response) {
+    let response = match PostResponse::from_json(&response) {
         Ok(ok) => ok,
         Err(err) => {
             println!("Failed to deserialze response");

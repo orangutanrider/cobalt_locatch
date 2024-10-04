@@ -183,15 +183,51 @@ fn start_download_tunnels<'a>(
     let mut futures = Vec::with_capacity(len);
     
     for tunnel in iter { 
-        futures.push(download_tunnel(tunnel));
+        futures.push(download(&tunnel.url, &tunnel.filename));
     }
 
     return futures;
 }
 
-async fn download_tunnel(tunnel: &TunnelResponse) -> Result<(), DownloadError> {
-    let stream = reqwest::get(&tunnel.url);
-    let file = tokio::fs::File::create(&tunnel.filename);
+// https://github.com/lostdusty/retrobalt/blob/main/module_downloader.go#L22-L49
+// https://discord.com/channels/1049706293700591677/1049740077460377660/1291849923519578154
+async fn start_download_pickers<'a>(
+    iter: slice::Iter<'a, PickerResponse>, 
+    len: usize
+) -> Vec<impl Future<Output = Result<(), DownloadError>> + use<'a>> {
+    let mut futures = Vec::with_capacity(len);
+
+    let mut outer_index = 0;
+    for picker in iter { 
+        let mut inner_index = 0;
+        for picker_obj in picker.picker.iter() {
+            
+            inner_index = inner_index + 1;
+        }
+
+        let Some(aud_url) = picker.audio else {
+            outer_index = outer_index + 1;
+            continue;
+        };
+
+        let Some(aud_filename) = picker.audio_filename else {
+            println!("Recieved an audio url, without recieving its filename"); 
+            println!("Logging unimplemented"); //todo!
+            //warn!("");
+
+            outer_index = outer_index + 1;
+            continue;
+        };
+
+        outer_index = outer_index + 1;
+    }
+
+    return futures;
+}
+
+async fn download(url: &str, filename: &str) -> Result<(), DownloadError> {
+    let stream = reqwest::get(url);
+    let file = tokio::fs::File::create(filename);
 
     let mut file = match file.await {
         Ok(ok) => ok,
@@ -223,22 +259,6 @@ async fn download_tunnel(tunnel: &TunnelResponse) -> Result<(), DownloadError> {
     }
 }
 
-async fn start_download_pickers<'a>(
-    iter: slice::Iter<'a, PickerResponse>, 
-    len: usize
-) -> Vec<impl Future<Output = Result<(), DownloadError>> + use<'a>> {
-    let mut futures = Vec::with_capacity(len);
-
-    for picker in iter { 
-        futures.push(download_picker(picker));
-    }
-
-    return futures;
-}
-
-async fn download_picker(picker: &PickerResponse) -> Result<(), DownloadError> {
-    todo!();
-}
 
 fn handle_errors() {
     todo!()

@@ -9,8 +9,6 @@ use std::{
 
 use clap::*;
 use reqwest::{Client, Response};
-use futures_util::StreamExt;
-use tokio::io::AsyncWriteExt;
 
 macro_rules! exit_msg {($($tt:tt)*) => {
     print!("Exiting (");
@@ -171,11 +169,6 @@ async fn pickers_sanitize(pickers: &mut Vec<PickerResponse>) {
     }
 }
 
-enum DownloadError {
-    FileError(std::io::Error),
-    ReqwestError(reqwest::Error),
-}
-
 fn start_download_tunnels<'a>(
     iter: slice::Iter<'a, TunnelResponse>, 
     len: usize
@@ -225,41 +218,6 @@ async fn start_download_pickers<'a>(
     return futures;
 }
 
-async fn download(url: &str, filename: &str) -> Result<(), DownloadError> {
-    let stream = reqwest::get(url);
-    let file = tokio::fs::File::create(filename);
-
-    let mut file = match file.await {
-        Ok(ok) => ok,
-        Err(err) => return Err(DownloadError::FileError(err)),
-    };
-
-    let stream = match stream.await {
-        Ok(ok) => ok,
-        Err(err) => return Err(DownloadError::ReqwestError(err)),
-    };
-
-    let mut stream = stream.bytes_stream();
-
-    while let Some(chunk) = stream.next().await {
-        match chunk {
-            Ok(ok) => {
-                match file.write_all(&ok).await {
-                    Ok(_) => {/* Do nothing */},
-                    Err(err) => return Err(DownloadError::FileError(err)),
-                };
-            },
-            Err(err) => return Err(DownloadError::ReqwestError(err)),
-        }
-    }
-
-    match file.flush().await {
-        Ok(_) => return Ok(()),
-        Err(err) => return Err(DownloadError::FileError(err)),
-    }
-}
-
-
 fn handle_errors() {
     todo!()
 }
@@ -283,8 +241,8 @@ fn deserialize_responses(responses: Vec<String>, len: usize) -> Vec<PostResponse
     return deserialized;
 }
 
-async fn get_cobalt(cobalt_url: &str) -> Result<(), reqwest::Error> {
-    let response = match reqwest::get(cobalt_url).await {
+async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), reqwest::Error> {
+    let response = match client.get(cobalt_url).send().await {
         Ok(ok) => {
             println!("Succesfully connected to cobalt");
             ok

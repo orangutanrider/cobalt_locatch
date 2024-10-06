@@ -186,6 +186,7 @@ name = "cobalt_locatch"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "encoding_rs",
  "env_logger",
  "futures-util",
  "log",

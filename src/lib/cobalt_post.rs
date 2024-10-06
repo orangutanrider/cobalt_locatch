@@ -2,7 +2,6 @@
 
 use std::{
     str::FromStr,
-    collections::HashMap,
     future::Future,
 };
 

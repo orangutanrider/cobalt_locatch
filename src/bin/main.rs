@@ -108,16 +108,18 @@ fn main() {
         },
     };
 
+    println!("Starting web client...");
+    let client = Client::new();
+
     println!("Attempting to connect to cobalt instance");
     println!("@ {}", &config.cobalt_url);
-    match async_runtime.block_on(get_cobalt(&config.cobalt_url)) {
+    match async_runtime.block_on(get_cobalt(&client, &config.cobalt_url)) {
         Ok(_) => {/* Do nothing */},
         Err(err) => {
             exit_msg!("{}", err); return;
         },
     }
 
-    let client = Client::new();
     println!("Making requests");
     let len = input.requests.len();
     let responses = make_requests(&client, &config.cobalt_url, &input, len);
@@ -146,7 +148,7 @@ fn main() {
     async_runtime.block_on(tun_future);
     async_runtime.block_on(picker_future);
 
-    let tunnel_downloads = start_download_tunnels(tunnels.iter(), len);
+    let tunnel_downloads = start_download_tunnels(&client, tunnels.iter(), len);
     // wait downloads
 }
 
@@ -170,13 +172,14 @@ async fn pickers_sanitize(pickers: &mut Vec<PickerResponse>) {
 }
 
 fn start_download_tunnels<'a>(
+    client: &'a Client,
     iter: slice::Iter<'a, TunnelResponse>, 
     len: usize
 ) -> Vec<impl Future<Output = Result<(), DownloadError>> + use<'a>> {
     let mut futures = Vec::with_capacity(len);
     
     for tunnel in iter { 
-        futures.push(download(&tunnel.url, &tunnel.filename));
+        futures.push(download(client, &tunnel.url, &tunnel.filename));
     }
 
     return futures;
@@ -187,7 +190,11 @@ fn start_download_tunnels<'a>(
 async fn start_download_pickers<'a>(
     iter: slice::Iter<'a, PickerResponse>, 
     len: usize
-) -> Vec<impl Future<Output = Result<(), DownloadError>> + use<'a>> {
+) //-> Vec<impl Future<Output = Result<(), DownloadError>> + use<'a>> {
+{
+    todo!("Parsing filenames from headers to-be-implemented");
+
+    /* 
     let mut futures = Vec::with_capacity(len);
 
     let mut outer_index = 0;
@@ -216,6 +223,7 @@ async fn start_download_pickers<'a>(
     }
 
     return futures;
+    */
 }
 
 fn handle_errors() {

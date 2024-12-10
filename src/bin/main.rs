@@ -94,6 +94,7 @@ fn main() {
         },
     };
 
+	// apply macro
     input.apply_macro();
 
     // start tokio
@@ -108,9 +109,11 @@ fn main() {
         },
     };
 
+	// start web client
     println!("Starting web client...");
     let client = Client::new();
 
+	// get
     println!("Attempting to connect to cobalt instance");
     println!("@ {}", &config.cobalt_url);
     match async_runtime.block_on(get_cobalt(&client, &config.cobalt_url)) {
@@ -120,15 +123,18 @@ fn main() {
         },
     }
 
+	// post
     println!("Making requests");
     let len = input.requests.len();
     let responses = make_requests(&client, &config.cobalt_url, &input, len);
 
+	// await responses
     println!("Waiting for responses...");
     let responses = async_runtime.block_on(unwrap_responses(responses, len));
     let responses = request_response_texts(responses, len);
     let responses = async_runtime.block_on(unwrap_pending_texts(responses, len));
     
+	// deserialize responses
     println!("Responses recieved"); //log?
     println!("Deserializing responses"); //log?
     let responses = deserialize_responses(responses, len);
@@ -137,19 +143,22 @@ fn main() {
     // Theoretically, you would create a new vector/allocation, sort the data into it (so that they are in homogenous blocks), and then create slices for each type.
     // Hypothetically, more computation in creating the storage type, but more memory efficient afterwards.
 
+	// Filter responses
     let mut errors = Vec::with_capacity(len);
     let mut pickers = Vec::with_capacity(len);
     let mut tunnels = Vec::with_capacity(len);
-    seperate_deserialized(responses.into_iter(), &mut errors, &mut pickers, &mut tunnels);
+    filter_responses(responses.into_iter(), &mut errors, &mut pickers, &mut tunnels);
 
     // Sanitize file names
-    let tun_future = tunnels_sanitize(&mut tunnels);
+    let tunnels_future = tunnels_sanitize(&mut tunnels);
     let picker_future = pickers_sanitize(&mut pickers);
-    async_runtime.block_on(tun_future);
+    async_runtime.block_on(tunnels_future);
     async_runtime.block_on(picker_future);
 
+	// Start downloads
     let tunnel_downloads = start_download_tunnels(&client, tunnels.iter(), len);
-    // wait downloads
+
+    // await downloads
 }
 
 // todo!
@@ -187,44 +196,43 @@ fn start_download_tunnels<'a>(
 
 // https://github.com/lostdusty/retrobalt/blob/main/module_downloader.go#L22-L49
 // https://discord.com/channels/1049706293700591677/1049740077460377660/1291849923519578154
-async fn start_download_pickers<'a>(
-    iter: slice::Iter<'a, PickerResponse>, 
-    len: usize
-) //-> Vec<impl Future<Output = Result<(), DownloadError>> + use<'a>> {
-{
-    todo!("Parsing filenames from headers to-be-implemented");
-
-    /* 
-    let mut futures = Vec::with_capacity(len);
-
-    let mut outer_index = 0;
-    for picker in iter { 
-        let mut inner_index = 0;
-        for picker_obj in picker.picker.iter() {
-            
-            inner_index = inner_index + 1;
-        }
-
-        let Some(aud_url) = picker.audio else {
-            outer_index = outer_index + 1;
-            continue;
-        };
-
-        let Some(aud_filename) = picker.audio_filename else {
-            println!("Recieved an audio url, without recieving its filename"); 
-            println!("Logging unimplemented"); //todo!
-            //warn!("");
-
-            outer_index = outer_index + 1;
-            continue;
-        };
-
-        outer_index = outer_index + 1;
-    }
-
-    return futures;
-    */
-}
+//async fn start_download_pickers<'a>(
+//    iter: slice::Iter<'a, PickerResponse>, 
+//    len: usize
+//) -> Vec<impl Future<Output = Result<(), DownloadError>> + use<'a>> {
+//	todo!("Handling picker respones is un-implemented");
+//
+//    //todo!("Parsing filenames from headers to-be-implemented");
+//
+//    let mut futures = Vec::with_capacity(len);
+//
+//    let mut outer_index = 0;
+//    for picker in iter { 
+//        let mut inner_index = 0;
+//        for picker_obj in picker.picker.iter() {
+//            
+//            inner_index = inner_index + 1;
+//        }
+//
+//        let Some(aud_url) = picker.audio else {
+//            outer_index = outer_index + 1;
+//            continue;
+//        };
+//
+//        let Some(aud_filename) = picker.audio_filename else {
+//            println!("Recieved an audio url, without recieving its filename"); 
+//            println!("Logging unimplemented"); //todo!
+//            //warn!("");
+//
+//            outer_index = outer_index + 1;
+//            continue;
+//        };
+//
+//        outer_index = outer_index + 1;
+//    }
+//
+//    return futures;
+//}
 
 fn handle_errors() {
     todo!()

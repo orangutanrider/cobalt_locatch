@@ -1,10 +1,10 @@
 ///! Parsing of filename field from Content-Disposition header
 
+// un-implemented while picker response goes un-implemented
+
 use std::str::Chars;
 
 use reqwest::header::HeaderValue;
-
-// un-implemented while picker response goes un-implemented
 
 // Cobalt uses this package for its Coontent-Disposition headers:
 // https://www.npmjs.com/package/content-disposition
@@ -16,7 +16,7 @@ use reqwest::header::HeaderValue;
 
 pub fn parse_filename(decoder: &mut Decoder, content_disposition: &HeaderValue) {
 	todo!("Picker response handling un-implemented");
-	
+
     let bytes = content_disposition.as_bytes();
 
     // Potential for optimization here;

@@ -31,7 +31,7 @@ pub fn post_cobalt<T: Into<reqwest::Body>>(client: &Client, cobalt_url: &str, bo
         .send();
 }
 
-pub fn seperate_deserialized(
+pub fn filter_responses(
     iter: std::vec::IntoIter<PostResponse>,
     errors: &mut Vec<ErrorResponse>,
     pickers: &mut Vec<PickerResponse>,

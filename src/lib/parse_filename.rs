@@ -4,6 +4,7 @@ use std::str::Chars;
 
 use reqwest::header::HeaderValue;
 
+// un-implemented while picker response goes un-implemented
 
 // Cobalt uses this package for its Coontent-Disposition headers:
 // https://www.npmjs.com/package/content-disposition
@@ -14,6 +15,8 @@ use reqwest::header::HeaderValue;
 // i.e. It is guaranteed to contain the "filename" field, and we don't have to bother with the unicode one
 
 pub fn parse_filename(decoder: &mut Decoder, content_disposition: &HeaderValue) {
+	todo!("Picker response handling un-implemented");
+	
     let bytes = content_disposition.as_bytes();
 
     // Potential for optimization here;
@@ -63,53 +66,6 @@ const FIELD: [char; FIELD_LEN] = ['f', 'i', 'l', 'e', 'n', 'a', 'm', 'e', '='];
 
 // https://learn.microsoft.com/en-us/dotnet/api/microsoft.net.http.headers.headerutilities.unescapeasquotedstring?view=aspnetcore-8.0
 // https://github.com/dotnet/aspnetcore/blob/3f1acb59718cadf111a0a796681e3d3509bb3381/src/Http/Headers/src/HeaderUtilities.cs#L616C9-L651C12
-
-fn field_search(mut iter: Chars<'_>) -> Result<(), ()> {
-    let Some(token) = iter.next() else {
-        todo!()
-    };
-
-    match token {
-        '\\' => todo!(),
-        '"' => todo!(),
-        ';' => todo!(),
-        _ => return field_search(iter), // Continue
-    }
-}
-
-// Ignore whitespace
-fn field_entrance(mut iter: Chars<'_>) -> Result<(), ()> {
-    let Some(token) = iter.next() else {
-        todo!()
-    };
-
-    if token.is_whitespace() {
-        return field_entrance(iter);
-    }
-
-    match token {
-        'f' => todo!(),
-        'F' => todo!(),
-        _ => return field_search(iter),
-    }
-}
-
-fn combo_field(mut iter: Chars<'_>, combo: usize) -> Result<(), ()> {
-    if combo == FIELD_LEN {
-        todo!()
-    }
-
-    let Some(token) = iter.next() else {
-        todo!()
-    };
-
-    if token == FIELD[combo] {
-        return combo_field(iter, combo + 1);
-    } else { match token {
-        '\\' => return field_search(iter, true),
-        _ => return field_search(iter, false),
-    }}
-}
 
 // Start by continuing until ';'
 // Ignore whitespace

@@ -1,3 +1,5 @@
+mod download;
+
 use lib::*;
 
 use core::slice;

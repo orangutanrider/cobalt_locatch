@@ -9,11 +9,11 @@ path = "src/lib/lib.rs"
 
 [[bin]]
 name = "main"
-path = "src/bin/bin_main.rs"
+path = "src/main/main.rs"
 
 [[bin]]
 name = "tunnel_test"
-path = "src/bin/bin_tunnel_test.rs"
+path = "src/bin/tunnel_test.rs"
 
 [dependencies]
 futures-util = "0.3.30"

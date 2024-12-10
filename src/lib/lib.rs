@@ -7,6 +7,7 @@ mod cobalt_get;
 mod input;
 mod config;
 mod download;
+mod parse_filename;
 
 pub use cobalt_get::*;
 pub use cobalt_post::*;

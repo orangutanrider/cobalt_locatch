@@ -4,7 +4,6 @@ use futures_util::StreamExt;
 use tokio::io::AsyncWriteExt;
 use reqwest::Client;
 
-
 pub enum DownloadError {
     FileError(IoError),
     ReqwestError(ReqError),

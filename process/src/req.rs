@@ -1,4 +1,4 @@
-use lib::*;
+use locatch_lib::*;
 
 use std::future::Future;
 use reqwest::{Client, Response};
@@ -13,10 +13,10 @@ macro_rules! PendingText {() => {
     impl Future<Output = Result<String, ReqError>>
 };}
 
-pub(super) async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), reqwest::Error> {
+pub async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), ReqError> {
     let response = match client.get(cobalt_url).send().await {
         Ok(ok) => {
-            println!("Succesfully connected to cobalt");
+            println!("Succesfully connected to cobalt"); // verbose log
             ok
         },
         Err(err) => {
@@ -28,9 +28,9 @@ pub(super) async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), 
     let response = match response.text().await {
         Ok(ok) => ok,
         Err(err) => {
-            println!("Error: {}", err);
-            println!("Couldn't get the response text from cobalt");
-            println!("Since cobalt was succesfully connected to, will try to continue execution anyways");
+            println!("Error: {}", err); // verbose log
+            println!("Couldn't get the response text from cobalt"); // verbose log
+            println!("Since cobalt was succesfully connected to, will try to continue execution anyways"); // verbose log
             return Ok(())
         },
     };
@@ -38,10 +38,10 @@ pub(super) async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), 
     let response = match GetResponse::from_json(&response) {
         Ok(ok) => ok,
         Err(err) => {
-            println!("Error: {}", err);
-            println!("Failed to deserialize cobalt response");
-            println!("This could indicate that an incompatible version of cobalt is being connected to");
-            println!("Will try to continue execution anyways");
+            println!("Error: {}", err); // verbose log
+            println!("Failed to deserialize cobalt response"); // verbose log
+            println!("This could indicate that an incompatible version of cobalt is being connected to"); // verbose log
+            println!("Will try to continue execution anyways"); // verbose log
             return Ok(())
         },
     };
@@ -50,7 +50,7 @@ pub(super) async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), 
     Ok(())
 }
 
-pub(super) fn make_requests(client: &Client, cobalt_url: &str, input: &SerialInput, len: usize) -> Vec<PendingRequest!()> {
+pub fn make_requests(client: &Client, cobalt_url: &str, input: &SerialInput, len: usize) -> Vec<PendingRequest!()> {
     let mut futures = Vec::with_capacity(len);
 
     for request in input.requests.iter() { // par SIMD possible?
@@ -69,7 +69,7 @@ pub(super) fn make_requests(client: &Client, cobalt_url: &str, input: &SerialInp
     return futures;
 }
 
-pub(super) async fn unwrap_responses(requests: Vec<PendingRequest!()>, len: usize) -> Vec<Response> {
+pub async fn unwrap_responses(requests: Vec<PendingRequest!()>, len: usize) -> Vec<Response> {
     let mut responses = Vec::with_capacity(len);
 
     for future in requests.into_iter() { // par SIMD possible?
@@ -88,7 +88,7 @@ pub(super) async fn unwrap_responses(requests: Vec<PendingRequest!()>, len: usiz
     return responses;
 }
 
-pub(super) fn deserialize_responses(responses: Vec<String>, len: usize) -> Vec<PostResponse> {
+pub fn deserialize_responses(responses: Vec<String>, len: usize) -> Vec<PostResponse> {
     let mut deserialized = Vec::with_capacity(len);
 
     for response in responses.iter() { // par SIMD possible?
@@ -107,7 +107,7 @@ pub(super) fn deserialize_responses(responses: Vec<String>, len: usize) -> Vec<P
     return deserialized;
 }
 
-pub(super) fn request_response_texts(responses: Vec<Response>, len: usize) -> Vec<PendingText!()> {
+pub fn request_response_texts(responses: Vec<Response>, len: usize) -> Vec<PendingText!()> {
     let mut futures = Vec::with_capacity(len);
 
     for response in responses.into_iter() { // par SIMD possible?
@@ -117,7 +117,7 @@ pub(super) fn request_response_texts(responses: Vec<Response>, len: usize) -> Ve
     return futures;
 }
 
-pub(super) async fn unwrap_pending_texts(pending_texts: Vec<PendingText!()>, len: usize) -> Vec<String> {
+pub async fn unwrap_pending_texts(pending_texts: Vec<PendingText!()>, len: usize) -> Vec<String> {
     let mut texts = Vec::with_capacity(len);
 
     for text in pending_texts.into_iter() { // par SIMD possible?

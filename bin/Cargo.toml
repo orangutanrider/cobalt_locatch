@@ -1,0 +1,17 @@
+# auxiliary execution (manual tests)
+
+[package]
+name = "bin"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "tunnel_test"
+path = "src/tunnel_test.rs"
+
+[dependencies]
+locatch_lib.workspace = true
+
+reqwest.workspace = true
+tokio.workspace = true

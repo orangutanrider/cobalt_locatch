@@ -1,8 +1,6 @@
-mod download; use download::*;
-mod req; use req::*;
-mod sanitize; use sanitize::*;
+use locatch_lib::*;
 
-use lib::*;
+use locatch_process::*;
 
 use std::{
     fs, 

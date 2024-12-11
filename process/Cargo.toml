@@ -1,0 +1,17 @@
+# Execution lib
+
+[package]
+name = "locatch_process"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[lib]
+name = "locatch_process"
+path = "src/lib.rs"
+
+[dependencies]
+locatch_lib.workspace = true
+
+reqwest.workspace = true
+sanitize-filename.workspace = true

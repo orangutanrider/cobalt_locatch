@@ -1,10 +1,10 @@
-use lib::*;
+use locatch_lib::*;
 
 use core::slice;
 use std::future::Future;
 use reqwest::Client;
 
-pub(super) fn start_download_tunnels<'a>(
+pub fn start_download_tunnels<'a>(
     client: &'a Client,
     iter: slice::Iter<'a, TunnelResponse>, 
     len: usize

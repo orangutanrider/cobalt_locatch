@@ -1,0 +1,19 @@
+# main execution/binary
+
+[package]
+name = "main"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "cobalt_locatch"
+path = "src/main.rs"
+
+[dependencies]
+locatch_lib.workspace = true
+locatch_process.workspace = true
+
+clap.workspace = true
+reqwest.workspace = true
+tokio.workspace = true

@@ -1,12 +1,12 @@
-use lib::*;
+use locatch_lib::*;
 
-pub(super) async fn tunnels_sanitize(tunnels: &mut Vec<TunnelResponse>) {
+pub async fn tunnels_sanitize(tunnels: &mut Vec<TunnelResponse>) {
     for tunnel in tunnels.iter_mut() { // par SIMD possible?
         sanitize_filename::sanitize(&mut tunnel.filename);
     }
 }
 
-pub(super) async fn pickers_sanitize(pickers: &mut Vec<PickerResponse>) {
+pub async fn pickers_sanitize(pickers: &mut Vec<PickerResponse>) {
     for picker in pickers.iter_mut() { // par SIMD possible?
         let Some(audio_filename) = &mut picker.audio_filename else {
             continue;

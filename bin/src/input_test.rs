@@ -1,9 +1,7 @@
 use locatch_macro::*;
-use locatch_lib::*;
 use locatch_process::*;
 
 use clap::*;
-use serde::*;
 
 fn main() {    
     let cli = Cli::parse();
@@ -17,25 +15,47 @@ fn main() {
             return;
         },
     };
+
+    print_serial_input(&input);
 }
 
-fn print_serial_input(input: SerialInput) {
-    let marco_print: Result<(), JsonError> = match input.marco {
+fn print_serial_input(input: &SerialInput) {
+    let marco_print: Result<(), JsonError> = match &input.marco {
         Some(marco) => {
             println!("Printing macro...");
             print_ser_request(marco)
         },
-        None => Ok(()),
+        None => {
+            println!("Macro is empty");
+            Ok(())
+        },
     };
 
     match marco_print {
-    Ok(_) => todo!(),
-    Err(_) => todo!(),
+        Ok(_) => {/* Do nothing */},
+        Err(err) => {
+            println!("Failed to serialize the deserialized macro, error: \n \t{}", err);
+        },
     }
 
+    println!("Printing {} requests...", input.requests.len());
+    let mut index: usize = 0;
+    for request in input.requests.iter() {
+        println!("Request-{}...", index);
+        match print_ser_request(request) {
+            Ok(_) => {/* Do nothing */},
+            Err(err) => {
+                println!("Unexpected error, was unable to serialize the request for the print; The request was gained by first deserializing it, was unable to serialize data that was previously deserialized?");
+                println!("Error: {}", err);
+            },
+        }
+        
+        index = index + 1;
+    }
+    
 }
 
-fn print_ser_request(request: SerialRequest) -> Result<(), JsonError> {
+fn print_ser_request(request: &SerialRequest) -> Result<(), JsonError> {
     let serialized = match request.to_json() {
         Ok(ok) => ok,
         Err(err) => return Err(err),

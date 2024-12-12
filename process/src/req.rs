@@ -1,4 +1,7 @@
+use locatch_macro::*;
 use locatch_lib::*;
+
+use crate::SerialInput;
 
 use std::future::Future;
 use reqwest::{Client, Response};

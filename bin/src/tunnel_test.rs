@@ -1,4 +1,6 @@
+use locatch_macro::*;
 use locatch_lib::*;
+
 use reqwest::Client;
 
 const URL: &str = "http://localhost:9000";

@@ -1,5 +1,7 @@
 //! Cobalt response representation
 
+use locatch_macro::*;
+
 use std::{
     str::FromStr,
     future::Future,

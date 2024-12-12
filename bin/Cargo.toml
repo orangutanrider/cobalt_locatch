@@ -5,6 +5,7 @@ authors.workspace = true
 edition.workspace = true
 
 [dependencies]
+locatch_macro.workspace = true
 locatch_lib.workspace = true
 locatch_process.workspace = true
 

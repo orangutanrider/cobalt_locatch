@@ -1,5 +1,5 @@
+use locatch_macro::*;
 use locatch_lib::*;
-
 use locatch_process::*;
 
 use std::{

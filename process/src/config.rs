@@ -1,4 +1,4 @@
-// relocate to process
+use locatch_macro::*;
 
 use serde::Deserialize;
 

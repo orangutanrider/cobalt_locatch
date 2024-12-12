@@ -11,7 +11,9 @@ name = "locatch_process"
 path = "src/lib.rs"
 
 [dependencies]
+locatch_macro.workspace = true
 locatch_lib.workspace = true
 
+serde.workspace = true
 reqwest.workspace = true
 sanitize-filename.workspace = true

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["lib", "process", "bin"]
+members = ["lib", "process", "bin", "macro"]
 
 [workspace.package]
 version = "0.1.0"
@@ -8,6 +8,7 @@ edition = "2021"
 authors = ["Dominic Rooney"]
 
 [workspace.dependencies]
+locatch_macro = { path = "macro" }
 locatch_lib = { path = "lib" } 
 locatch_process = { path = "process" }
 

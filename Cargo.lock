@@ -114,6 +114,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "locatch_lib",
+ "locatch_macro",
  "locatch_process",
  "reqwest",
  "tokio",
@@ -566,6 +567,7 @@ name = "locatch_lib"
 version = "0.1.0"
 dependencies = [
  "futures-util",
+ "locatch_macro",
  "reqwest",
  "serde",
  "serde_json",
@@ -573,12 +575,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "locatch_macro"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "locatch_process"
 version = "0.1.0"
 dependencies = [
  "locatch_lib",
+ "locatch_macro",
  "reqwest",
  "sanitize-filename",
+ "serde",
 ]
 
 [[package]]

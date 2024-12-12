@@ -1,4 +1,4 @@
-// relocate to process
+use locatch_macro::*;
 
 use serde::{ Deserialize, Serialize };
 //use log::warn;
@@ -147,7 +147,6 @@ impl_to_json!(SerialRequest);
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::FromJson;
 
     #[test]
     fn empty_input() {

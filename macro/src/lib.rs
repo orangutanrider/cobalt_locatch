@@ -7,8 +7,9 @@ pub trait FromJson<'de>: Deserialize<'de> {
         return serde_json::de::from_str::<Self>(json);
     }
 }
+#[macro_export]
 macro_rules! impl_from_json {($type:ty) => {
-    impl<'de> crate::FromJson<'_> for $type { }
+    impl<'de> locatch_macro::FromJson<'_> for $type { }
 };}
 
 pub trait ToJson: Serialize {
@@ -17,6 +18,7 @@ pub trait ToJson: Serialize {
         return serde_json::to_string(self)
     }
 }
+#[macro_export]
 macro_rules! impl_to_json {($type:ty) => {
-    impl crate::ToJson for $type { }
+    impl locatch_macro::ToJson for $type { }
 };}

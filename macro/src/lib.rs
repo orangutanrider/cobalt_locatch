@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Error as JsonError;
 
+pub type IOError = std::io::Error;
+
 pub trait FromJson<'de>: Deserialize<'de> {
     #[inline]
     fn from_json(json:&'de str) -> Result<Self, JsonError> {

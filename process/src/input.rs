@@ -1,3 +1,5 @@
+//! Input representation
+
 use locatch_macro::*;
 
 use serde::{ Deserialize, Serialize };

@@ -30,73 +30,28 @@ struct Cli {
     output: Option<PathBuf>,
 }
 
-const DEFAULT_CONFIG_PATH: &str = "cobalt_config.json";
-
 fn main() {    
     let cli = Cli::parse();
 
     println!("{:?}", cli.input);
 
     // Recieve config
-    let config = match cli.config {
-        Some(config) => {
-            match fs::read_to_string(config) {
-                Ok(ok) => {
-                    println!("Config file recieved");
-                    ok
-                },
-                Err(err) => {
-                    println!("Error with config file");
-                    exit_msg!("{}", err); return;
-                },
-            }
-        },
-        None => {
-            match fs::read_to_string(DEFAULT_CONFIG_PATH) {
-                Ok(ok) => {
-                    println!("Config file recieved");
-                    ok
-                },
-                Err(err) => {
-                    println!("Error with config file");
-                    exit_msg!("{}", err); return;
-                },
-            }
-        },
-    };
-
-    // Deserialize config
-    let config = match SerialConfig::from_json(&config) {
+    let config = match config_reception(&cli.config) {
         Ok(ok) => ok,
-        Err(err) => {
-            println!("Error with deserialization of config file");
-            exit_msg!("{}", err); return;
-        },
+        Err(_) => {
+			exit_msg!("Error with reception of config"); 
+			return;
+		},
     };
 
     // Recieve input
-    let input = match fs::read_to_string(&cli.input) {
-        Ok(ok) => {
-            println!("Input file recieved");
-            ok
-        },
-        Err(err) => {
-            println!("Error with input file");
-            exit_msg!("{}", err); return;
-        },
-    };
-
-    // Deserialize input
-    let mut input = match SerialInput::from_json(&input) {
+    let input = match input_reception(&cli.input) {
         Ok(ok) => ok,
-        Err(err) => {
-            println!("Error with deserialization of input file");
-            exit_msg!("{}", err); return;
-        },
+        Err(_) => {
+			exit_msg!("Error with reception of input");
+			return;
+		},
     };
-
-	// apply macro
-    input.apply_macro();
 
     // start tokio
     let async_runtime = match tokio::runtime::Builder::new_multi_thread()

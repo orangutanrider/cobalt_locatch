@@ -1,17 +1,23 @@
-# auxiliary execution (manual tests)
-
 [package]
 name = "bin"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
 
+[dependencies]
+locatch_lib.workspace = true
+locatch_process.workspace = true
+
+clap.workspace = true
+reqwest.workspace = true
+tokio.workspace = true
+
+# Main
+[[bin]]
+name = "cobalt_locatch"
+path = "src/main.rs"
+
+# Auxiliary executables (manual tests)
 [[bin]]
 name = "tunnel_test"
 path = "src/tunnel_test.rs"
-
-[dependencies]
-locatch_lib.workspace = true
-
-reqwest.workspace = true
-tokio.workspace = true

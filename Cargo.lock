@@ -112,7 +112,9 @@ checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 name = "bin"
 version = "0.1.0"
 dependencies = [
+ "clap",
  "locatch_lib",
+ "locatch_process",
  "reqwest",
  "tokio",
 ]
@@ -584,17 +586,6 @@ name = "log"
 version = "0.4.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
-
-[[package]]
-name = "main"
-version = "0.1.0"
-dependencies = [
- "clap",
- "locatch_lib",
- "locatch_process",
- "reqwest",
- "tokio",
-]
 
 [[package]]
 name = "memchr"

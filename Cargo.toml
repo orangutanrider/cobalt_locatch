@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["lib", "process", "bin", "main"]
+members = ["lib", "process", "bin"]
 
 [workspace.package]
 version = "0.1.0"

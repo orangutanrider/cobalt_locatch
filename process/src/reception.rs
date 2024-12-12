@@ -10,7 +10,7 @@ use std::{fs, path::PathBuf};
 pub fn config_reception(cli: &Option<PathBuf>) -> Result<SerialConfig, ()> {
     // Recieve config
     let config = match cli {
-		// Path was inputted via cli
+        // Path was inputted via cli
         Some(config) => {
             match fs::read_to_string(config) {
                 Ok(ok) => {
@@ -19,13 +19,13 @@ pub fn config_reception(cli: &Option<PathBuf>) -> Result<SerialConfig, ()> {
                 },
                 Err(err) => {
                     println!("Error with config file: {}", err);
-					return Err(())
+                    return Err(())
                 },
             }
         },
-		// No path was inputted
+        // No path was inputted
         None => {
-			const DEFAULT_CONFIG_PATH: &str = "locatch_config.json";
+            const DEFAULT_CONFIG_PATH: &str = "locatch_config.json";
             match fs::read_to_string(DEFAULT_CONFIG_PATH) {
                 Ok(ok) => {
                     println!("Config file recieved");
@@ -48,7 +48,7 @@ pub fn config_reception(cli: &Option<PathBuf>) -> Result<SerialConfig, ()> {
         },
     };
 
-	return Ok(config)
+    return Ok(config)
 }
 
 /// Gets input, deserializes, and applies the macro
@@ -62,7 +62,7 @@ pub fn input_reception(cli: &PathBuf) -> Result<SerialInput, ()> {
         },
         Err(err) => {
             println!("Error with input file: {}", err);
-			return Err(())
+            return Err(())
         },
     };
 
@@ -75,8 +75,8 @@ pub fn input_reception(cli: &PathBuf) -> Result<SerialInput, ()> {
         },
     };
 
-	// apply macro
+    // apply macro
     input.apply_macro();
 
-	return Ok(input)
+    return Ok(input)
 }

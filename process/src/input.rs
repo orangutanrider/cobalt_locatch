@@ -8,7 +8,7 @@ use serde::{ Deserialize, Serialize };
 #[derive(Deserialize)]
 pub struct SerialInput {
     #[serde(alias = "macro")]
-    pub marco: Option<SerialRequestMacro>, // the macro should be a seperate file rather than a part of the input; It would mean less nesting which I like.
+    pub marco: Option<SerialRequestMacro>,
     pub requests: Vec<SerialRequest>,
 }
 impl_from_json!(SerialInput);

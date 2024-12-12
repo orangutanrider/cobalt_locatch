@@ -18,6 +18,23 @@ pub fn start_download_tunnels<'a>(
     return futures;
 }
 
+/// Returns the number of failed downloads
+pub async fn await_downloads(downloads: Vec<impl Future<Output = Result<(), DownloadError>>>) -> usize {
+    let mut fail_count: usize = 0;
+
+    for download in downloads.into_iter() {
+        match download.await {
+            Ok(_) => {/* Do nothing */},
+            Err(err) => {
+                fail_count = fail_count + 1;
+                println!("Encountered an error with a download: \n{}", err)
+            },
+        }
+    }
+
+    return fail_count;
+}
+
 // https://github.com/lostdusty/retrobalt/blob/main/module_downloader.go#L22-L49
 // https://discord.com/channels/1049706293700591677/1049740077460377660/1291849923519578154
 //async fn start_download_pickers<'a>(

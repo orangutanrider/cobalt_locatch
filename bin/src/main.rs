@@ -95,6 +95,8 @@ fn main() {
     let tunnel_downloads = start_download_tunnels(&client, tunnels.iter(), len);
 
     // await downloads
+    let fails = async_runtime.block_on(await_downloads(tunnel_downloads));
+    println!("{} downloads failed", fails);
 }
 
 // todo!

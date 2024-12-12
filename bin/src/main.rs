@@ -2,14 +2,8 @@ use locatch_macro::*;
 use locatch_lib::*;
 use locatch_process::*;
 
-use std::{
-    fs, 
-    future::Future, 
-    path::PathBuf,
-};
-
 use clap::*;
-use reqwest::{Client, Response};
+use reqwest::Client;
 
 macro_rules! exit_msg {($($tt:tt)*) => {
     print!("Exiting (");
@@ -17,22 +11,8 @@ macro_rules! exit_msg {($($tt:tt)*) => {
     println!(")")
 };}
 
-#[derive(Parser)]
-#[command(version, about, long_about = None)]
-struct Cli {
-    #[arg(short, long, value_name = "FILE")]
-    input: PathBuf,
-
-    #[arg(short, long, value_name = "FILE")]
-    config: Option<PathBuf>, 
-
-    #[arg(short, long, value_name = "PATH")]
-    output: Option<PathBuf>,
-}
-
-fn main() {    
+fn main() {
     let cli = Cli::parse();
-
     println!("{:?}", cli.input);
 
     // Recieve config

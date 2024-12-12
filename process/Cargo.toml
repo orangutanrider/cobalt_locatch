@@ -17,3 +17,4 @@ locatch_lib.workspace = true
 serde.workspace = true
 reqwest.workspace = true
 sanitize-filename.workspace = true
+clap.workspace = true

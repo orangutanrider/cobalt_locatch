@@ -6,6 +6,7 @@ use crate::{SerialConfig, SerialInput};
 use std::{fs, path::PathBuf};
 
 /// Gets config, and deserializes it
+#[inline]
 pub fn config_reception(cli: &Option<PathBuf>) -> Result<SerialConfig, ()> {
     // Recieve config
     let config = match cli {
@@ -51,8 +52,8 @@ pub fn config_reception(cli: &Option<PathBuf>) -> Result<SerialConfig, ()> {
 }
 
 /// Gets input, deserializes, and applies the macro
+#[inline]
 pub fn input_reception(cli: &PathBuf) -> Result<SerialInput, ()> {
-
     // Recieve input
     let input = match fs::read_to_string(cli) {
         Ok(ok) => {

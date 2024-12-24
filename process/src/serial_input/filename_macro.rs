@@ -60,8 +60,6 @@ fn iter_escapes<'a>(mut chars: Chars<'a>, mut output: String, list_index: usize)
             return iter_escapes(chars, output, list_index);
         },
     }
-
-    todo!()
 }
 
 fn apply_index<'a>(chars: Chars<'a>, mut output: String, list_index: usize) -> String {
@@ -108,5 +106,56 @@ fn apply_suffix(suffix: &str, ticket: &mut Ticket) {
         None => {
             ticket.filename = Some(suffix.to_owned());
         },
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn iter_escapes_index_test() {
+        const TEST_STR: &str = "foo-$i-bar";
+        let processed = iter_escapes(TEST_STR.chars(), String::with_capacity(TEST_STR.len()), 0);
+
+        assert_eq!(processed, "foo-0-bar");
+    }
+
+    #[test]
+    fn iter_escapes_nothing_test() {
+        const TEST_STR: &str = "foobar";
+        let processed = iter_escapes(TEST_STR.chars(), String::with_capacity(TEST_STR.len()), 0);
+
+        assert_eq!(processed, "foobar");
+    }
+
+    #[test]
+    fn iter_escapes_invalid_test() {
+        const TEST_STR: &str = "foo$#bar";
+        let processed = iter_escapes(TEST_STR.chars(), String::with_capacity(TEST_STR.len()), 0);
+
+        assert_eq!(processed, "foobar");
+    }
+
+    #[test]
+    fn suffix_test() {
+        let mut ticket: Ticket = Ticket{
+            filename: Some("foo".to_string()),
+            ..Default::default()
+        };
+        apply_suffix("bar", &mut ticket);
+
+        assert_eq!(ticket.filename, Some("foobar".to_string()));
+    }
+
+    #[test]
+    fn prefix_test() {
+        let mut ticket: Ticket = Ticket{
+            filename: Some("bar".to_string()),
+            ..Default::default()
+        };
+        apply_prefix("foo", &mut ticket);
+
+        assert_eq!(ticket.filename, Some("foobar".to_string()));
     }
 }

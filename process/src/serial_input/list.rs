@@ -17,12 +17,22 @@ pub struct List {
 }
 impl_from_json!(List);
 impl List {
-    pub fn apply_local_macros(&mut self) {
-        self.apply_local_ticket_macro();
-        self.apply_local_filename_macro();
+    pub fn apply_internal_macros(&mut self) {
+        self.apply_internal_ticket_macro();
+        self.apply_internal_filename_macro();
     }
 
-    fn apply_local_filename_macro(&mut self) {
+    pub fn apply_filename_macro(&mut self, filename_macro: &FilenameMacro) {
+        apply_filename_macro(filename_macro, &mut self.tickets);
+    }
+
+    pub fn apply_ticket_macro(&mut self, ticket_macro: &TicketMacro) {
+        for ticket in self.tickets.iter_mut() {
+            apply_ticket_macro(ticket_macro, ticket);
+        }
+    }
+
+    fn apply_internal_filename_macro(&mut self) {
         let filename_macro = match &self.filename_macro {
             Some(val) => val,
             None => return,
@@ -31,7 +41,7 @@ impl List {
         apply_filename_macro(filename_macro, &mut self.tickets);
     }
 
-    fn apply_local_ticket_macro(&mut self) {
+    fn apply_internal_ticket_macro(&mut self) {
         let ticket_macro = match &self.ticket_macro {
             Some(val) => val,
             None => return,

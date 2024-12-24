@@ -3,7 +3,7 @@ use locatch_macro::*;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Ticket {
     pub url: String,
     pub filename: Option<String>,

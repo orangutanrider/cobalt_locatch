@@ -1,7 +1,7 @@
 use locatch_macro::*;
 use locatch_lib::*;
 
-use crate::SerialInput;
+use crate::List;
 
 use std::future::Future;
 use reqwest::{Client, Response};
@@ -53,10 +53,10 @@ pub async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), ReqErro
     Ok(())
 }
 
-pub fn make_requests(client: &Client, cobalt_url: &str, input: &SerialInput, len: usize) -> Vec<PendingRequest!()> {
+pub fn make_requests(client: &Client, cobalt_url: &str, input: &List, len: usize) -> Vec<PendingRequest!()> {
     let mut futures = Vec::with_capacity(len);
 
-    for request in input.requests.iter() { // par SIMD possible?
+    for request in input.tickets.iter() { // par SIMD possible?
         match request.to_json() {
             Ok(body) => futures.push(post_cobalt(client, cobalt_url, body)),
             Err(err) => {

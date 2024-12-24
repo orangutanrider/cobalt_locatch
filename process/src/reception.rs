@@ -1,7 +1,7 @@
 //! File input reception
 
 use locatch_macro::*;
-use crate::{SerialConfig, SerialInput};
+use crate::{SerialConfig, List};
 
 use std::{fs, path::PathBuf};
 
@@ -53,7 +53,7 @@ pub fn config_reception(cli: &Option<PathBuf>) -> Result<SerialConfig, ()> {
 
 /// Gets input, deserializes, and applies the macro
 #[inline]
-pub fn input_reception(cli: &PathBuf) -> Result<SerialInput, ()> {
+pub fn input_reception(cli: &PathBuf) -> Result<List, ()> {
     // Recieve input
     let input = match fs::read_to_string(cli) {
         Ok(ok) => {
@@ -67,7 +67,7 @@ pub fn input_reception(cli: &PathBuf) -> Result<SerialInput, ()> {
     };
 
     // Deserialize input
-    let mut input = match SerialInput::from_json(&input) {
+    let mut input = match List::from_json(&input) {
         Ok(ok) => ok,
         Err(err) => {
             println!("Error with deserialization of input file: {}", err);

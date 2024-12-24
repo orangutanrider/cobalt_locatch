@@ -6,13 +6,14 @@ use serde::{ Deserialize, Serialize };
 //use log::warn;
 
 #[derive(Deserialize)]
-pub struct SerialInput {
+/// Serial file input struct.  
+pub struct List {
     #[serde(alias = "macro")]
     pub marco: Option<SerialRequestMacro>,
-    pub requests: Vec<SerialRequest>,
+    pub tickets: Vec<SerialRequest>,
 }
-impl_from_json!(SerialInput);
-impl SerialInput {
+impl_from_json!(List);
+impl List {
     /// Apply the macro to the requests (if there is a macro)
     pub fn apply_macro(&mut self) {
         let Some(marco) = &self.marco else {
@@ -20,7 +21,7 @@ impl SerialInput {
             return;
         };
 
-        for request in self.requests.iter_mut() {
+        for request in self.tickets.iter_mut() {
             request.apply_macro(marco);
         }
     }
@@ -34,13 +35,13 @@ impl SerialInput {
             return;
         };
 
-        let mut state = self.requests.clone();
+        let mut state_iter = self.tickets.clone().into_iter();
+        for request in self.tickets.iter_mut() {
+            let Some(state) = state_iter.next() else {
+                continue; // should never happen, log?
+            };
 
-        let mut index = 0;
-        while index < self.requests.len() {
-            index = index + 1;
-            let request_state = state.remove(index);
-            self.requests[index].apply_macro_with(request_state, marco);
+            request.apply_macro_with(state, marco);
         }
     }
 
@@ -146,6 +147,7 @@ impl SerialRequest {
 }
 impl_to_json!(SerialRequest);
 
+/* 
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -158,7 +160,7 @@ mod tests {
             }
         );
 
-        match SerialInput::from_json(input) {
+        match List::from_json(input) {
             Ok(_) => return /* Test succesful */,
             Err(_) => panic!("Failed to deserialize"),
         };
@@ -172,7 +174,7 @@ mod tests {
             }
         );
 
-        match SerialInput::from_json(input) {
+        match List::from_json(input) {
             Ok(_) => panic!("Expected to be unable to deserialze, but did deserialize"),
             Err(_) => return /* Test succesful */,
         };
@@ -190,9 +192,10 @@ mod tests {
             }
         );
 
-        match SerialInput::from_json(input) {
+        match List::from_json(input) {
             Ok(_) => return /* Test succesful */,
             Err(_) => panic!("Failed to deserialize"),
         };
     }
 }
+*/

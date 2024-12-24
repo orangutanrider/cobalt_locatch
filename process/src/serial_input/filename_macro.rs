@@ -1,4 +1,5 @@
 use std::str::Chars;
+use locatch_macro::impl_from_json;
 use serde::Deserialize;
 
 use super::ticket::Ticket;
@@ -10,6 +11,7 @@ pub struct FilenameMacro {
     prefix: Option<String>,
     suffix: Option<String>,
 }
+impl_from_json!(FilenameMacro);
 
 /// Escapes a character in the filename for a specific funtion in the filename macro
 const ESCAPE_CHAR: char = '$';

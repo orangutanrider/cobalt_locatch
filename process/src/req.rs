@@ -1,20 +1,10 @@
 use locatch_macro::*;
 use locatch_lib::*;
 
-use crate::List;
+use crate::serial_input::{List, SentTicket};
 
 use std::future::Future;
 use reqwest::{Client, Response};
-
-//type PendingRequest = impl Future<Output = Result<Response, ReqError>>;
-macro_rules! PendingRequest {() => {
-    impl Future<Output = Result<Response, ReqError>>
-};}
-
-//type PendingText = impl Future<Output = Result<String, ReqError>>;
-macro_rules! PendingText {() => {
-    impl Future<Output = Result<String, ReqError>>
-};}
 
 pub async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), ReqError> {
     let response = match client.get(cobalt_url).send().await {
@@ -53,29 +43,31 @@ pub async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), ReqErro
     Ok(())
 }
 
-pub fn make_requests(client: &Client, cobalt_url: &str, input: &List, len: usize) -> Vec<PendingRequest!()> {
-    let mut futures = Vec::with_capacity(len);
+pub fn make_requests(
+    client: &Client, cobalt_url: &str, list: List,
+    futures: &mut Vec<PendingRequest!()>, sent_tickets: &mut Vec<SentTicket>
+) {
+    // simd
+    for ticket in list.tickets.into_iter() { 
+        let (sent, request) = ticket.to_send();
 
-    for request in input.tickets.iter() { // par SIMD possible?
+        sent_tickets.push(sent);
+
         match request.to_json() {
             Ok(body) => futures.push(post_cobalt(client, cobalt_url, body)),
             Err(err) => {
-                println!("Error: {}", err);
-                println!("A request could not be serialized"); 
-                println!("Logging unimplemented"); //todo!
-                //warn!("");
+                println!("A request could not be serialized, error: {}", err);
                 continue;
             },
         };
     }
-
-    return futures;
 }
 
 pub async fn unwrap_responses(requests: Vec<PendingRequest!()>, len: usize) -> Vec<Response> {
     let mut responses = Vec::with_capacity(len);
 
-    for future in requests.into_iter() { // par SIMD possible?
+    // simd
+    for future in requests.into_iter() {
         match future.await {
             Ok(ok) => responses.push(ok),
             Err(err) => {

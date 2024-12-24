@@ -24,3 +24,15 @@ pub trait ToJson: Serialize {
 macro_rules! impl_to_json {($type:ty) => {
     impl locatch_macro::ToJson for $type { }
 };}
+
+// type PendingRequest = impl Future<Output = Result<Response, ReqError>>;
+#[macro_export]
+macro_rules! PendingRequest {() => {
+    impl Future<Output = Result<Response, ReqError>>
+};}
+
+// type PendingText = impl Future<Output = Result<String, ReqError>>;
+#[macro_export]
+macro_rules! PendingText {() => {
+    impl Future<Output = Result<String, ReqError>>
+};}

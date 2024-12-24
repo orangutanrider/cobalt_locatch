@@ -25,7 +25,7 @@ macro_rules! into_response {($enum:ident, $t:ty, $json:ident) => {{
 }};}
 
 #[inline]
-pub fn post_cobalt<T: Into<reqwest::Body>>(client: &Client, cobalt_url: &str, body: T) -> impl Future<Output = Result<Response, ReqError>> { 
+pub fn post_cobalt<T: Into<reqwest::Body>>(client: &Client, cobalt_url: &str, body: T) -> PendingRequest!() { 
     return client.post(cobalt_url)
         .header(ACCEPT, "application/json")
         .header(CONTENT_TYPE, "application/json")

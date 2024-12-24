@@ -1,54 +1,44 @@
 // Logging planned
 
-/* 
-use locatch_macro::*;
-
+use locatch_macro::impl_from_json;
 use serde::{ Deserialize, Serialize };
 
+use super::{
+    filename_macro::{apply_filename_macro, FilenameMacro}, 
+    ticket::Ticket, 
+    ticket_macro::{apply_ticket_macro, TicketMacro}
+};
+
 #[derive(Deserialize)]
-/// Serial file input struct.  
 pub struct List {
-    #[serde(alias = "macro")]
-    pub marco: Option<SerialRequestMacro>,
-    pub tickets: Vec<SerialRequest>,
+    pub filename_macro: Option<FilenameMacro>,
+    pub ticket_macro: Option<TicketMacro>,
+    pub tickets: Vec<Ticket>,
 }
 impl_from_json!(List);
 impl List {
-    /// Apply the macro to the requests (if there is a macro)
-    pub fn apply_macro(&mut self) {
-        let Some(marco) = &self.marco else {
-            // There is no macro to apply
-            return;
-        };
-
-        for request in self.tickets.iter_mut() {
-            request.apply_macro(marco);
-        }
+    pub fn apply_local_macros(&mut self) {
+        self.apply_local_ticket_macro();
+        self.apply_local_filename_macro();
     }
 
-    // Thereotically more performant.
-    // Instead of cloning state at each step of the iteration, the entire vec is simply cloned and then values are fed in as state.
-    // Un-tested.
-    pub fn apply_macro_vec_clone(&mut self) {
-        let Some(marco) = &self.marco else {
-            // There is no macro to apply
-            return;
+    fn apply_local_filename_macro(&mut self) {
+        let filename_macro = match &self.filename_macro {
+            Some(val) => val,
+            None => return,
         };
 
-        let mut state_iter = self.tickets.clone().into_iter();
-        for request in self.tickets.iter_mut() {
-            let Some(state) = state_iter.next() else {
-                continue; // should never happen, log?
-            };
-
-            request.apply_macro_with(state, marco);
-        }
+        apply_filename_macro(filename_macro, &mut self.tickets);
     }
 
-    /// Apply macro onto requests in parallel
-    /// Un-implemented
-    pub fn apply_macro_par() {
-        todo!()
+    fn apply_local_ticket_macro(&mut self) {
+        let ticket_macro = match &self.ticket_macro {
+            Some(val) => val,
+            None => return,
+        };
+
+        for ticket in self.tickets.iter_mut() {
+            apply_ticket_macro(ticket_macro, ticket);
+        }
     }
 }
-*/

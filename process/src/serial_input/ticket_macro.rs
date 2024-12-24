@@ -31,8 +31,8 @@ fn override_none<T>(target_state: &Option<T>, override_val: Option<T>) -> Option
     }
 }
 
-fn apply_macro_onto_ticket(ticket_macro: &TicketMacro, ticket: &mut Ticket) {
-    let ticket_state = &ticket.clone();
+pub(crate) fn apply_ticket_macro(ticket_macro: &TicketMacro, ticket: &mut Ticket) {
+    let ticket_state: &Ticket = &ticket.clone();
 
     ticket.cobalt_filename = override_none(&ticket_state.cobalt_filename, ticket_macro.cobalt_filename.clone());
     ticket.video_quality = override_none(&ticket_state.video_quality, ticket_macro.video_quality.clone());

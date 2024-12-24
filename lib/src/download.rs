@@ -1,11 +1,11 @@
-use crate::*;
+use locatch_macro::*;
 
 use futures_util::StreamExt;
 use tokio::io::AsyncWriteExt;
 use reqwest::Client;
 
 pub enum DownloadError {
-    FileError(IoError),
+    FileError(IOError),
     ReqwestError(ReqError),
 }
 impl std::fmt::Display for DownloadError {

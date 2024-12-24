@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
+use reqwest::Error;
 
 pub type IOError = std::io::Error;
 pub type JsonError = serde_json::Error;
+pub type ReqError = reqwest::Error;
 
 pub trait FromJson<'de>: Deserialize<'de> {
     #[inline]
@@ -27,9 +29,10 @@ macro_rules! impl_to_json {($type:ty) => {
 
 // type PendingRequest = impl Future<Output = Result<Response, ReqError>>;
 #[macro_export]
-macro_rules! PendingRequest {() => {
+macro_rules! PendingResponse {() => {
     impl Future<Output = Result<Response, ReqError>>
 };}
+
 
 // type PendingText = impl Future<Output = Result<String, ReqError>>;
 #[macro_export]

@@ -1,6 +1,7 @@
+use locatch_macro::*;
+
 use serde::Deserialize;
 use serde_json::Number;
-use serde_json::Error as JsonError;
 
 #[derive(Deserialize)]
 pub struct GetResponse {

@@ -13,7 +13,6 @@ use reqwest::{
     header::{ACCEPT, CONTENT_TYPE},
     Client,
     Response,
-    Error as ReqError
 };
 
 macro_rules! into_response {($enum:ident, $t:ty, $json:ident) => {{
@@ -25,7 +24,7 @@ macro_rules! into_response {($enum:ident, $t:ty, $json:ident) => {{
 }};}
 
 #[inline]
-pub fn post_cobalt<T: Into<reqwest::Body>>(client: &Client, cobalt_url: &str, body: T) -> PendingRequest!() { 
+pub fn post_cobalt<T: Into<reqwest::Body>>(client: &Client, cobalt_url: &str, body: T) -> PendingResponse!() { 
     return client.post(cobalt_url)
         .header(ACCEPT, "application/json")
         .header(CONTENT_TYPE, "application/json")

@@ -44,14 +44,15 @@ pub async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), ReqErro
 }
 
 pub fn make_requests(
-    client: &Client, cobalt_url: &str, list: List,
-    futures: &mut Vec<PendingRequest!()>, sent_tickets: &mut Vec<SentTicket>
-) {
+    client: &Client, cobalt_url: &str, list: List, len: usize,
+) -> (Vec<PendingResponse!()>, Vec<SentTicket>) {
+    let mut futures = Vec::with_capacity(len);
+    let mut ticket_output = Vec::with_capacity(len);
+    
     // simd
     for ticket in list.tickets.into_iter() { 
         let (sent, request) = ticket.to_send();
-
-        sent_tickets.push(sent);
+        ticket_output.push(sent);
 
         match request.to_json() {
             Ok(body) => futures.push(post_cobalt(client, cobalt_url, body)),
@@ -61,9 +62,11 @@ pub fn make_requests(
             },
         };
     }
+    
+    return (futures, ticket_output);
 }
 
-pub async fn unwrap_responses(requests: Vec<PendingRequest!()>, len: usize) -> Vec<Response> {
+pub async fn unwrap_responses(requests: Vec<PendingResponse!()>, len: usize) -> Vec<Response> {
     let mut responses = Vec::with_capacity(len);
 
     // simd

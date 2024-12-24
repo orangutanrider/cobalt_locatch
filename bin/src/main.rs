@@ -61,7 +61,7 @@ fn main() {
 
     // post
     println!("Making requests");
-    let len = input.requests.len();
+    let len = input.tickets.len();
     let responses = make_requests(&client, &config.cobalt_url, &input, len);
 
     // await responses
@@ -93,6 +93,8 @@ fn main() {
 
     // Start downloads
     let tunnel_downloads = start_download_tunnels(&client, tunnels.iter(), len);
+    // pickers are un-processed for now
+    // errors aren't displayed for now
 
     // await downloads
     let fails = async_runtime.block_on(await_downloads(tunnel_downloads));

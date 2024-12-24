@@ -19,7 +19,7 @@ fn main() {
     print_serial_input(&input);
 }
 
-fn print_serial_input(input: &SerialInput) {
+fn print_serial_input(input: &List) {
     let marco_print: Result<(), JsonError> = match &input.marco {
         Some(marco) => {
             println!("Printing macro...");
@@ -38,9 +38,9 @@ fn print_serial_input(input: &SerialInput) {
         },
     }
 
-    println!("Printing {} requests...", input.requests.len());
+    println!("Printing {} requests...", input.tickets.len());
     let mut index: usize = 0;
-    for request in input.requests.iter() {
+    for request in input.tickets.iter() {
         println!("Request-{}...", index);
         match print_ser_request(request) {
             Ok(_) => {/* Do nothing */},

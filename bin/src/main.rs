@@ -5,6 +5,38 @@ use locatch_process::*;
 use clap::*;
 use reqwest::Client;
 
+fn main() {
+    let cli = Cli::parse();
+    
+    // Reception
+    let (config, list) = match reception(&cli) {
+        Ok(ok) => ok,
+        Err(err) => {
+            println!("Failed at reception");
+            return
+        },
+    };
+
+    // start tokio
+    let async_runtime = match tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build() 
+    {
+        Ok(ok) => ok,
+        Err(err) => {
+            println!("Failed to start tokio");
+            return;
+        },
+    };
+
+    let client = Client::new();
+    let len = list.tickets.len();
+
+    // post
+    let (responses, tickets) = make_requests(&client, &config.cobalt_url, list, len);
+}
+
+/* 
 macro_rules! exit_msg {($($tt:tt)*) => {
     print!("Exiting (");
     print!($($tt)*);
@@ -25,7 +57,7 @@ fn main() {
     };
 
     // Recieve input
-    let input = match input_reception(&cli.input) {
+    let input = match list_reception(&cli.input) {
         Ok(ok) => ok,
         Err(_) => {
             exit_msg!("Error with reception of input");
@@ -76,8 +108,8 @@ fn main() {
     let responses = deserialize_responses(responses, len);
     
     // Technically, you only have to allocate enough space for a single vec with capacity "len", sized by whichever data structure is the largest out of the union types.
-    // Theoretically, you would create a new vector/allocation, sort the data into it (so that they are in homogenous blocks), and then create slices for each type.
-    // Hypothetically, more computation in creating the storage type, but more memory efficient afterwards.
+    // Then you could create slices for each response type.
+    // You would still have to filter them into homogenous blocks though.
 
     // Filter responses
     let mut errors = Vec::with_capacity(len);
@@ -100,13 +132,14 @@ fn main() {
     let fails = async_runtime.block_on(await_downloads(tunnel_downloads));
     println!("{} downloads failed", fails);
 }
+*/
 
 // todo!
 // File output to output directory input
 
-fn handle_errors() {
-    todo!()
-}
+// fn handle_errors() {
+//     todo!()
+// }
 
 // Pseudocode
 /*

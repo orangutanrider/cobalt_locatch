@@ -1,18 +1,60 @@
-//! File input reception
+//! File intake as of cli input
 
 // Logging todo
 // probably replace the prints with logging
 
 use locatch_macro::*;
-use crate::cli::CONFIG_PATH;
+use crate::cli::*;
 use crate::serial_input::{Config, FilenameMacro, List, TicketMacro};
 
 use std::{fs, path::PathBuf};
 
+/// The output of reception
+/// Deserialized files, from the CLI input.
+pub type RecievedInput = (Config, List);
+
+#[inline]
+pub fn reception(cli: &Cli) -> Result<RecievedInput, ()> {
+    // Recieve inputs
+    let config = match config_reception(&cli.config) {
+        Ok(ok) => ok,
+        Err(err) => return Err(err),
+    };
+
+    let mut list = match list_reception(&cli.list) {
+        Ok(ok) => ok,
+        Err(err) => return Err(err),
+    };
+
+    let filename_macro = match filename_macro_reception(&cli.filename_macro) {
+        Ok(ok) => ok,
+        Err(err) => return Err(err),
+    };
+
+    let ticket_macro = match ticket_macro_reception(&cli.ticket_macro) {
+        Ok(ok) => ok,
+        Err(err) => return Err(err),
+    };
+
+    // Apply macros
+    list.apply_internal_macros();
+    match filename_macro {
+        Some(filename_macro) => list.apply_filename_macro(&filename_macro),
+        None => {/* Do Nothing */},
+    }
+    match ticket_macro {
+        Some(ticket_macro) => list.apply_ticket_macro(&ticket_macro),
+        None => {/* Do Nothing */},
+    }
+
+    // Return
+    return Ok((config, list))
+}
+
 /// Gets config, and deserializes it.
 /// Config has a fallback path associated with it, if it was not inputted via cli, then the system will try to get it via the default path.
 #[inline]
-pub fn config_reception(cli: &Option<PathBuf>) -> Result<Config, ()> {
+fn config_reception(cli: &Option<PathBuf>) -> Result<Config, ()> {
     // Recieve config
     let config = match cli {
         // Path was inputted via cli
@@ -57,7 +99,7 @@ pub fn config_reception(cli: &Option<PathBuf>) -> Result<Config, ()> {
 
 /// Gets list, and deserializes it
 #[inline]
-pub fn list_reception(cli: &PathBuf) -> Result<List, ()> {
+fn list_reception(cli: &PathBuf) -> Result<List, ()> {
     // Recieve list
     let list = match fs::read_to_string(cli) {
         Ok(ok) => {
@@ -83,7 +125,7 @@ pub fn list_reception(cli: &PathBuf) -> Result<List, ()> {
 }
 
 #[inline]
-pub fn filename_macro_reception(cli: &Option<PathBuf>) -> Result<Option<FilenameMacro>, ()> {
+fn filename_macro_reception(cli: &Option<PathBuf>) -> Result<Option<FilenameMacro>, ()> {
     let cli = match cli {
         Some(val) => val,
         None => {
@@ -117,7 +159,7 @@ pub fn filename_macro_reception(cli: &Option<PathBuf>) -> Result<Option<Filename
 }
 
 #[inline]
-pub fn ticket_macro_reception(cli: &Option<PathBuf>) -> Result<Option<TicketMacro>, ()> {
+fn ticket_macro_reception(cli: &Option<PathBuf>) -> Result<Option<TicketMacro>, ()> {
     let cli = match cli {
         Some(val) => val,
         None => {

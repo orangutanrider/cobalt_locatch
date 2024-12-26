@@ -28,7 +28,11 @@ impl Ticket {
     pub fn to_send(self) -> (SentTicket, CobaltRequest) {
         return (
             SentTicket{
-                filename: self.filename.clone()
+                filename: self.filename.clone(),
+                cobalt_filename: match self.cobalt_filename {
+                    Some(val) => val,
+                    None => false,
+                },
             },
             CobaltRequest {
                 url: Some(self.url),
@@ -51,5 +55,6 @@ impl Ticket {
 }
 
 pub struct SentTicket {
-    pub filename: Option<String>
+    pub filename: Option<String>,
+    pub cobalt_filename: bool,
 }

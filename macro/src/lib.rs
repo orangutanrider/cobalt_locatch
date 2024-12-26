@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
-use reqwest::Error;
+
+pub use std::future::Future;
 
 pub type IOError = std::io::Error;
 pub type JsonError = serde_json::Error;
@@ -45,5 +46,5 @@ macro_rules! PendingText {() => {
 
 #[macro_export]
 macro_rules! PendingDownload {() => {
-    impl Future<Output = Result<(), locatch_lib::DownloadError>>
+    impl Future<Output = Result<(), LocatchErr>>
 }}

@@ -14,6 +14,7 @@ path = "src/lib.rs"
 locatch_macro.workspace = true
 locatch_lib.workspace = true
 
+tokio.workspace = true
 serde.workspace = true
 reqwest.workspace = true
 sanitize-filename.workspace = true

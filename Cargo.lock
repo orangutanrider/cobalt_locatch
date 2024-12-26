@@ -594,6 +594,7 @@ dependencies = [
  "reqwest",
  "sanitize-filename",
  "serde",
+ "tokio",
 ]
 
 [[package]]

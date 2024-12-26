@@ -1,9 +1,11 @@
 use locatch_lib::*;
+use locatch_macro::PendingDownload;
 
 use core::slice;
 use std::future::Future;
 use reqwest::Client;
 
+/// Outputs a vec of PendingDownload
 pub fn start_download_tunnels<'a>(
     client: &'a Client,
     iter: slice::Iter<'a, TunnelResponse>, 
@@ -19,7 +21,7 @@ pub fn start_download_tunnels<'a>(
 }
 
 /// Returns the number of failed downloads
-pub async fn await_downloads(downloads: Vec<impl Future<Output = Result<(), DownloadError>>>) -> usize {
+pub async fn await_downloads(downloads: Vec<PendingDownload!()>) -> usize {
     let mut fail_count: usize = 0;
 
     for download in downloads.into_iter() {

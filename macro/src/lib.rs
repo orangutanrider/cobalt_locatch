@@ -39,3 +39,9 @@ macro_rules! PendingResponse {() => {
 macro_rules! PendingText {() => {
     impl Future<Output = Result<String, ReqError>>
 };}
+
+// type PendingDownload = impl Future<Output = Result<(), DownloadError>>;
+#[macro_export]
+macro_rules! PendingDownload {() => {
+    impl Future<Output = Result<(), locatch_lib::DownloadError>>
+}}

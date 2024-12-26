@@ -1,11 +1,48 @@
 use locatch_macro::*;
 use locatch_lib::*;
 
-use crate::serial_input::{List, SentTicket};
+use crate::serial_input::{List, Ticket, SentTicket};
 
 use std::future::Future;
 use reqwest::{Client, Response};
 
+pub(crate) async fn request(
+    client: &Client, cobalt_url: &str, ticket: Ticket
+) -> (Result<PostResponse, LocatchErr>, SentTicket) {
+    let (sent, request) = ticket.to_send();
+
+    let response = match request.to_json() {
+        Ok(body) => post_cobalt(client, cobalt_url, body).await, // send
+        Err(err) => {
+            return (Err(LocatchErr::Json(err)), sent)
+        },
+    };
+
+    // unwrap
+    let response = match response {
+        Ok(ok) => ok,
+        Err(err) => return (Err(LocatchErr::Req(err)), sent),
+    };
+
+    // text
+    let response = response.text().await;
+
+    // unwrap
+    let response = match response {
+        Ok(ok) => ok,
+        Err(err) => return (Err(LocatchErr::Req(err)), sent),
+    };
+
+    // deserialize
+    let response = match PostResponse::from_json(&response) {
+        Ok(ok) => ok,
+        Err(err) => return (Err(LocatchErr::Json(err)), sent),
+    };
+
+    return (Ok(response), sent)
+}
+
+/* 
 pub async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), ReqError> {
     let response = match client.get(cobalt_url).send().await {
         Ok(ok) => {
@@ -133,3 +170,4 @@ pub async fn unwrap_pending_texts(pending_texts: Vec<PendingText!()>, len: usize
 
     return texts;
 }
+*/

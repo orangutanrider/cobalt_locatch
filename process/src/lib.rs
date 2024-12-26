@@ -4,7 +4,6 @@ mod reception;
 mod sanitize;
 mod req;
 mod download;
-mod post_office;
 mod tokio;
 
 pub use serial_input::*;

@@ -5,6 +5,12 @@ pub type IOError = std::io::Error;
 pub type JsonError = serde_json::Error;
 pub type ReqError = reqwest::Error;
 
+pub enum LocatchErr {
+    Io(IOError),
+    Json(JsonError),
+    Req(ReqError),
+}
+
 pub trait FromJson<'de>: Deserialize<'de> {
     #[inline]
     fn from_json(json:&'de str) -> Result<Self, JsonError> {
@@ -27,20 +33,16 @@ macro_rules! impl_to_json {($type:ty) => {
     impl locatch_macro::ToJson for $type { }
 };}
 
-// type PendingRequest = impl Future<Output = Result<Response, ReqError>>;
 #[macro_export]
 macro_rules! PendingResponse {() => {
     impl Future<Output = Result<Response, ReqError>>
 };}
 
-
-// type PendingText = impl Future<Output = Result<String, ReqError>>;
 #[macro_export]
 macro_rules! PendingText {() => {
     impl Future<Output = Result<String, ReqError>>
 };}
 
-// type PendingDownload = impl Future<Output = Result<(), DownloadError>>;
 #[macro_export]
 macro_rules! PendingDownload {() => {
     impl Future<Output = Result<(), locatch_lib::DownloadError>>

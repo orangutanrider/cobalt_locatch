@@ -1,6 +1,8 @@
 use reqwest::Client;
 use std::future::*;
-use std::pin::pin;
+use std::task::Context;
+use std::task::Poll;
+use std::pin::*;
 
 use locatch_macro::*;
 use locatch_lib::*;
@@ -13,7 +15,7 @@ async fn into_downloads(
     tickets: Vec<Ticket>
 ) -> Vec<Result<(), LocatchErr>> {
     match concurrent_download_limit {
-        Some(limit) => download_with_limit(client, cobalt_url, limit, tickets),
+        Some(limit) => download_with_limit(client, cobalt_url, limit, tickets).await,
         None => download_unlimited(client, cobalt_url, tickets).await,
     }
 }
@@ -35,49 +37,64 @@ async fn download_unlimited(
 
     return output
 }
+ 
+#[inline]
+fn iter_pin_mut<T>(slice: Pin<&mut [T]>) -> impl Iterator<Item = Pin<&mut T>> {
+    return unsafe { slice.get_unchecked_mut() }
+        .iter_mut()
+        .map(|t| unsafe { Pin::new_unchecked(t) })
+}
 
-fn download_with_limit(
-    client: &Client, cobalt_url: &str, mut limit: usize, 
+async fn download_with_limit(
+    client: &Client, cobalt_url: &str, limit: usize, 
     tickets: Vec<Ticket>
-) -> Vec<Result<(), LocatchErr>> {
-    let mut open: usize = 0;
+) -> Vec<Result<(), LocatchErr>> { 
+    let len = tickets.len();
+    let mut output_vec: Vec<Result<(), LocatchErr>> = Vec::with_capacity(len);
+    let mut open_vec: Vec<usize> = Vec::with_capacity(limit);
+    let mut poll_vec = Vec::with_capacity(limit);
     let mut tickets = tickets.into_iter();
 
-    let mut pending_downloads = Vec::new();
-    let mut output = Vec::new();
-
     // init
-    loop {
+    let mut init: usize = 0;
+    while init != limit {
         let Some(ticket) = tickets.next() else {
             break;
-        };
+        }; 
+        
+        poll_vec.push(into_download(ticket, client, cobalt_url));
 
-        // pending
-        pending_downloads.push(into_download(ticket, client, cobalt_url));
-
-        if limit == 0 {
-            break;
-        }
-        else {
-            limit = limit - 1;
-        }
+        init = init + 1;
     }
-    
+
+    let mut poll_vec = poll_vec.into_boxed_slice();
+    let mut poll_vec = unsafe { Pin::new_unchecked(poll_vec.as_mut()) };
+
+    // process
+
 
     todo!()
 }
 
-async fn poll_downloads<'a>(    
-    mut pending_downloads: std::vec::IntoIter<PendingDownload!()>,
-    output: &mut Vec<Result<(), LocatchErr>>,
-) {
-    let Some(pending) = pending_downloads.next() else {
-        return;
-    };
-
-    let pending = pin!(pending);
-    
-
+#[inline]
+// poll_fn
+fn download_with_limit_process(
+    cx: &mut Context,
+    output_vec: Vec<Result<(), LocatchErr>>, open_vec: Vec<usize>, poll_vec: Pin<&mut [PendingDownload!()]>,
+    tickets: std::vec::IntoIter<Ticket>
+) -> Vec<Result<(), LocatchErr>> {
+    /* 
+    loop
+    poll the poll vec
+    if download finished
+        push the index of its position in the poll vec to the open vec
+        push its result to the output vec
+    for each index in open vec
+        start a download by popping the tickets vec
+        replace the entry at the index in the poll vec with the new download
+    clear the open vec
+    */
+    todo!()
 }
 
 async fn into_download(ticket: Ticket, client: &Client, cobalt_url: &str) -> Result<(), LocatchErr> {

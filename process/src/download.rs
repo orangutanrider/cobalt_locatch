@@ -37,12 +37,45 @@ async fn download_unlimited(
 
     return output
 }
- 
+
 #[inline]
-fn iter_pin_mut<T>(slice: Pin<&mut [T]>) -> impl Iterator<Item = Pin<&mut T>> {
+fn pin_iter_mut<T>(slice: Pin<&mut [T]>) -> impl Iterator<Item = Pin<&mut T>> {
     return unsafe { slice.get_unchecked_mut() }
         .iter_mut()
         .map(|t| unsafe { Pin::new_unchecked(t) })
+}
+
+#[inline]
+fn pin_access_at<T>(slice: Pin<&mut [T]>, i: usize) -> Pin<&mut T> {
+    return unsafe { Pin::new_unchecked(
+        &mut slice.get_unchecked_mut()[i] 
+    ) }
+}
+
+#[inline]
+fn pin_set_at<T>(slice: Pin<&mut [T]>, i: usize, val: T) {
+    unsafe {
+        slice.get_unchecked_mut()[i] = val;
+    }
+}
+
+// #[inline]
+// fn poll_vec_set_at(slice: Pin<&mut [PendingDownload!()]>, i: usize, val: PendingDownload!()) {
+//     unsafe {
+//         slice.get_unchecked_mut()[i] = val;
+//     }
+// }
+
+#[inline]
+fn pending_download_set_at(
+    slice: Pin<&mut [impl Future<Output = Result<(), LocatchErr>>]>, 
+    i: usize, 
+    val: impl Future<Output = Result<(), LocatchErr>>
+) {
+    unsafe {
+        //slice.get_unchecked_mut()[i] = val;
+        Pin::new_unchecked(slice.get_unchecked_mut().get_mut(i).unwrap()).set(val);
+    }
 }
 
 async fn download_with_limit(
@@ -80,9 +113,41 @@ async fn download_with_limit(
 // poll_fn
 fn download_with_limit_process(
     cx: &mut Context,
-    output_vec: Vec<Result<(), LocatchErr>>, open_vec: Vec<usize>, poll_vec: Pin<&mut [PendingDownload!()]>,
-    tickets: std::vec::IntoIter<Ticket>
+    client: &Client, cobalt_url: &str,
+    mut output_vec: Vec<Result<(), LocatchErr>>, mut open_vec: Vec<usize>, mut poll_vec: Pin<&mut [PendingDownload!()]>,
+    mut tickets: std::vec::IntoIter<Ticket>
 ) -> Vec<Result<(), LocatchErr>> {
+    loop {
+        // poll
+        let mut i: usize = 0;
+        for pending in pin_iter_mut(poll_vec.as_mut()) {
+            match pending.poll(cx) {
+                Poll::Ready(val) => {
+                    output_vec.push(val);
+                    open_vec.push(i)
+                },
+                Poll::Pending => {/* Do Nothing */},
+            }
+
+            i = i + 1;
+        }
+
+        // refill
+        for index in open_vec.iter() {
+            let Some(ticket) = tickets.next() else {
+                break;
+            };
+
+
+            let new = into_download(ticket, client, cobalt_url);
+            //access_pin_mut::<impl Future<Output = Result<(), LocatchErr>>>(poll_vec, *index).set(into_download(ticket, client, cobalt_url));
+            //access_pin_mut(poll_vec, *index).set(new);
+            pin_set_at(poll_vec, *index, new);
+        }
+
+        todo!()
+    }
+
     /* 
     loop
     poll the poll vec

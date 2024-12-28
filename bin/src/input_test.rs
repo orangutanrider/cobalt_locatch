@@ -1,3 +1,6 @@
+fn main() {}
+
+/* 
 use locatch_macro::*;
 use locatch_process::*;
 
@@ -64,3 +67,4 @@ fn print_ser_request(request: &SerialRequest) -> Result<(), JsonError> {
     println!("{}", serialized);
     return Ok(())
 }
+    */

@@ -1,3 +1,6 @@
+fn main() {}
+
+/* 
 use locatch_macro::*;
 use locatch_lib::*;
 use locatch_process::*;
@@ -158,4 +161,5 @@ fn main() {
     
     Log results
     END
+*/
 */

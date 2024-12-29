@@ -52,12 +52,12 @@ fn pin_access_at<T>(slice: Pin<&mut [T]>, i: usize) -> Pin<&mut T> {
     ) }
 }
 
-#[inline]
-fn pin_set_at<T>(slice: Pin<&mut [T]>, i: usize, val: T) {
-    unsafe {
-        slice.get_unchecked_mut()[i] = val;
-    }
-}
+// #[inline]
+// fn pin_set_at<T>(slice: Pin<&mut [T]>, i: usize, val: T) {
+//     unsafe {
+//         slice.get_unchecked_mut()[i] = val;
+//     }
+// }
 
 // #[inline]
 // fn poll_vec_set_at(slice: Pin<&mut [PendingDownload!()]>, i: usize, val: PendingDownload!()) {
@@ -66,17 +66,80 @@ fn pin_set_at<T>(slice: Pin<&mut [T]>, i: usize, val: T) {
 //     }
 // }
 
-#[inline]
-fn pending_download_set_at(
-    slice: Pin<&mut [impl Future<Output = Result<(), LocatchErr>>]>, 
-    i: usize, 
-    val: impl Future<Output = Result<(), LocatchErr>>
+// #[inline]
+// fn pin_set_at(slice: Pin<&mut [impl Future<Output = Result<(), LocatchErr>>]>, i: usize, val: impl Future<Output = Result<(), LocatchErr>>) {
+//     unsafe {
+//         slice.get_unchecked_mut()[i] = val;
+//     }
+// }
+
+// #[inline]
+// fn set_at(slice: &mut [impl Future<Output = Result<(), LocatchErr>>], i: usize, val: impl Future<Output = Result<(), LocatchErr>>) {
+//     //let entry = &mut slice[i];
+//     //let val = val;
+// }
+
+// fn set_element(slice: &mut [impl TestTrait], val: impl TestTrait, index: usize) {
+//     slice[index] = val;
+// }
+
+// fn set_element<T: TestTrait>(slice: &mut [T], val: T, index: usize) {
+//     slice[index] = val;
+// }
+
+// fn set_element<T: Future<Output = Result<(), LocatchErr>>>(slice: &mut [T], val: T, index: usize) {
+//     slice[index] = val;
+//}
+
+// fn set_element<
+//     T: Future<Output = Result<(), LocatchErr>>
+// > (
+//     slice: Pin<&mut [T]>, val: T, index: usize
+// ) {
+//     unsafe {
+//         slice.get_unchecked_mut()[index] = val;   
+//     }
+// }
+
+// fn set_element(
+//     slice: Pin<&mut [impl Future<Output = Result<(), LocatchErr>>]>, 
+//     val: impl Future<Output = Result<(), LocatchErr>>, 
+//     index: usize
+// ) {
+//     unsafe {
+//         slice.get_unchecked_mut()[index] = val;   
+//     }
+// }
+
+trait Foo { }
+
+fn set_element(
+    slice: &mut [impl Foo], val: impl Foo, index: usize
 ) {
-    unsafe {
-        //slice.get_unchecked_mut()[i] = val;
-        Pin::new_unchecked(slice.get_unchecked_mut().get_mut(i).unwrap()).set(val);
-    }
+    slice[index] = val;
 }
+
+// struct Test{
+//     data: impl Future<Output = Result<(), LocatchErr>>
+// }
+
+// #[inline]
+// fn set_at(slice: &mut [impl Future<Output = Result<(), LocatchErr>>], i: usize, val: impl Future<Output = Result<(), LocatchErr>>) {
+//     slice[i] = val;
+// }
+
+// #[inline]
+// fn pending_download_set_at(
+//     slice: Pin<&mut [impl Future<Output = Result<(), LocatchErr>>]>, 
+//     i: usize, 
+//     val: impl Future<Output = Result<(), LocatchErr>>
+// ) {
+//     unsafe {
+//         //slice.get_unchecked_mut()[i] = val;
+//         let pin = Pin::new_unchecked(slice.get_unchecked_mut().get_mut(i).unwrap());
+//         Pin::new_unchecked(slice.get_unchecked_mut().get_mut(i).unwrap()).set(val);
+//     }
+// }
 
 async fn download_with_limit(
     client: &Client, cobalt_url: &str, limit: usize, 
@@ -114,7 +177,7 @@ async fn download_with_limit(
 fn download_with_limit_process(
     cx: &mut Context,
     client: &Client, cobalt_url: &str,
-    mut output_vec: Vec<Result<(), LocatchErr>>, mut open_vec: Vec<usize>, mut poll_vec: Pin<&mut [PendingDownload!()]>,
+    mut output_vec: Vec<Result<(), LocatchErr>>, mut open_vec: Vec<usize>, mut poll_vec: Pin<&mut [impl Future<Output = Result<(), LocatchErr>>]>,
     mut tickets: std::vec::IntoIter<Ticket>
 ) -> Vec<Result<(), LocatchErr>> {
     loop {
@@ -142,7 +205,8 @@ fn download_with_limit_process(
             let new = into_download(ticket, client, cobalt_url);
             //access_pin_mut::<impl Future<Output = Result<(), LocatchErr>>>(poll_vec, *index).set(into_download(ticket, client, cobalt_url));
             //access_pin_mut(poll_vec, *index).set(new);
-            pin_set_at(poll_vec, *index, new);
+            //pin_set_at(poll_vec, *index, new);
+            set_element::<Future<Output = Result<(), LocatchErr>>>(poll_vec, new, *index);
         }
 
         todo!()

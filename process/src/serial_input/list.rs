@@ -1,7 +1,7 @@
 // Logging planned
 
 use locatch_macro::impl_from_json;
-use serde::{ Deserialize, Serialize };
+use serde::Deserialize;
 
 use super::{
     filename_macro::{apply_filename_macro, FilenameMacro}, 

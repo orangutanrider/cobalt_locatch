@@ -1,9 +1,7 @@
 use reqwest::Client;
 
 use tokio::task::*;
-use tokio::runtime::Runtime;
-use std::future::*;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use locatch_macro::*;
 use locatch_lib::*;
@@ -12,7 +10,7 @@ use crate::serial_input::*;
 use crate::req::*;
 
 #[inline]
-async fn into_downloads(
+pub async fn into_downloads(
     client: &Client, cobalt_url: &str, concurrent_download_limit: Option<usize>, 
     tickets: Vec<Ticket>
 ) -> Vec<Result<(), LocatchErr>> {
@@ -118,14 +116,14 @@ async fn into_download(ticket: Ticket, client: &Client, cobalt_url: &str) -> Res
 
     let response = match response {
         Ok(ok) => ok,
-        Err(err) => todo!(),
+        Err(err) => return Err(err),
     };
 
     match response {
         PostResponse::Redirect(tunnel) => return tunnel_download(client, tunnel, ticket).await,
         PostResponse::Tunnel(tunnel) => return tunnel_download(client, tunnel, ticket).await,
-        PostResponse::Picker(picker) => todo!(),
-        PostResponse::Error(error) => todo!(),
+        PostResponse::Picker(_picker) => todo!(),
+        PostResponse::Error(_error) => todo!(),
     }
 }
 

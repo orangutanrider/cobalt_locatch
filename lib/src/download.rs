@@ -2,23 +2,26 @@ use locatch_macro::*;
 
 use futures_util::StreamExt;
 use tokio::io::AsyncWriteExt;
+use tokio::join;
 use reqwest::Client;
 
 pub async fn download(client: &Client, url: &str, filename: &str) -> Result<(), LocatchErr> {
-    let request = client.get(url).send();
     let file = tokio::fs::File::create(filename);
+    let pending = client.get(url).send();
 
-    let mut file = match file.await {
+    let (file, pending) = join!(file, pending);
+    
+    let mut file = match file {
         Ok(ok) => ok,
         Err(err) => return Err(LocatchErr::Io(err)),
     };
 
-    let response = match request.await {
+    let pending = match pending {
         Ok(ok) => ok,
         Err(err) => return Err(LocatchErr::Req(err)),
     };
 
-    let mut stream = response.bytes_stream();
+    let mut stream = pending.bytes_stream();
 
     while let Some(chunk) = stream.next().await {
         match chunk {

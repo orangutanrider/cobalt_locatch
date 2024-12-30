@@ -1,14 +1,14 @@
 use reqwest::Client;
 
 use tokio::task::*;
-use std::ops::Deref;
 use std::sync::Mutex;
 
 use locatch_macro::*;
+use locatch_macro::unsafe_lib::UnsafeSend;
 use locatch_lib::*;
 
 use crate::serial_input::*;
-use crate::req::*;
+use crate::request;
 
 #[inline]
 pub async fn into_downloads(
@@ -60,19 +60,9 @@ async fn download_with_limit(
     };
 }
 
-struct UnsafeSend<T> (T);
-unsafe impl<T> Send for UnsafeSend<T> { }
-impl<T> Deref for UnsafeSend<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
 // An Arc isn't needed because the thread is joined before the scope ends.
 /// It will process tickets from the spool, adding them to the output, until no tickets are left.  
-/// Unsafe: It is expected that the thread is joined before any of this function's inputs are dropped.
+/// Unsafe: It is expected that the thread is joined before any of the inputs are dropped.
 #[inline]
 async unsafe fn download_unravel_thread(
     spool: UnsafeSend<*mut Mutex<std::vec::IntoIter<Ticket>>>,
@@ -114,7 +104,7 @@ async unsafe fn download_unravel_thread(
 }
 
 // An Arc isn't needed because the thread is joined before the scope ends.
-/// Unsafe: It is expected that the thread is joined before any of this function's inputs are dropped.
+/// Unsafe: It is expected that the thread is joined before any of the inputs are dropped.
 #[inline]
 async unsafe fn download_one_shot_thread(
     ticket: Ticket,

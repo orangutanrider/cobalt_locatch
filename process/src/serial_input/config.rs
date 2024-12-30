@@ -9,4 +9,5 @@ pub struct Config {
     pub async_stack_size: Option<usize>,
     pub concurrent_download_limit: Option<usize>,
 }
-impl_from_json!(Config);
+impl_from_str_json!(Config);
+impl_from_string_json!(Config);

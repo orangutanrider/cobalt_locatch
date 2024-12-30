@@ -47,7 +47,7 @@ pub enum PostResponse {
     Redirect(RedirectResponse),
     Tunnel(TunnelResponse),
 }
-impl_from_json!(PostResponse);
+impl_from_str_json!(PostResponse);
 
 enum Status {
     Error,

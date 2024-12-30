@@ -1,6 +1,6 @@
 use super::ticket::Ticket;
 
-use locatch_macro::impl_from_json;
+use locatch_macro::{impl_from_str_json, impl_from_string_json};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -21,7 +21,8 @@ pub struct TicketMacro {
     tiktok_h265: Option<bool>,
     twitter_gif: Option<bool>,
 }
-impl_from_json!(TicketMacro);
+impl_from_str_json!(TicketMacro);
+impl_from_string_json!(TicketMacro);
 
 fn override_none<T>(target_state: &Option<T>, override_val: Option<T>) -> Option<T>{
     match target_state {

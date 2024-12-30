@@ -1,10 +1,9 @@
 use locatch_macro::*;
 use locatch_lib::*;
 
-use crate::serial_input::{List, Ticket, SentTicket};
+use crate::serial_input::{Ticket, SentTicket};
 
-use std::future::Future;
-use reqwest::{Client, Response};
+use reqwest::Client;
 
 pub(crate) async fn request(
     client: &Client, cobalt_url: &str, ticket: Ticket

@@ -1,6 +1,6 @@
 // Logging planned
 
-use locatch_macro::impl_from_json;
+use locatch_macro::{impl_from_str_json, impl_from_string_json};
 use serde::Deserialize;
 
 use super::{
@@ -15,7 +15,8 @@ pub struct List {
     pub ticket_macro: Option<TicketMacro>,
     pub tickets: Vec<Ticket>,
 }
-impl_from_json!(List);
+impl_from_str_json!(List);
+impl_from_string_json!(List);
 impl List {
     pub fn apply_internal_macros(&mut self) {
         self.apply_internal_ticket_macro();

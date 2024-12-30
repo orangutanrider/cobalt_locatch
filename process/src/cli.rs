@@ -21,4 +21,4 @@ pub struct Cli {
 }
 
 // Fallback path
-pub const CONFIG_PATH: &str = "locatch_config.json";
+pub const CONFIG_FALLBACK: &str = "locatch_config.json";

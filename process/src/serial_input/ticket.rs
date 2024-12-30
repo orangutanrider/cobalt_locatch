@@ -23,7 +23,7 @@ pub struct Ticket {
     pub tiktok_h265: Option<bool>,
     pub twitter_gif: Option<bool>,
 }
-impl_from_json!(Ticket);
+impl_from_str_json!(Ticket);
 impl Ticket {
     pub fn to_send(self) -> (SentTicket, CobaltRequest) {
         return (

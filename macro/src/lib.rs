@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+pub mod unsafe_lib;
+
 pub type IOError = std::io::Error;
 pub type JsonError = serde_json::Error;
 pub type ReqError = reqwest::Error;
@@ -10,15 +12,29 @@ pub enum LocatchErr {
     Req(ReqError),
 }
 
-pub trait FromJson<'de>: Deserialize<'de> {
-    #[inline]
-    fn from_json(json:&'de str) -> Result<Self, JsonError> {
-        return serde_json::de::from_str::<Self>(json);
-    }
+pub trait FromJson<'de, T>: Deserialize<'de> {
+    fn from_json(json: T) -> Result<Self, JsonError>;
 }
+
+/// &str json
 #[macro_export]
-macro_rules! impl_from_json {($type:ty) => {
-    impl<'de> locatch_macro::FromJson<'_> for $type { }
+macro_rules! impl_from_str_json {($type:ty) => {
+    impl<'de> locatch_macro::FromJson<'de, &'de str> for $type {
+        #[inline]
+        fn from_json(json: &'de str) -> Result<Self, locatch_macro::JsonError> {
+            return serde_json::de::from_str::<Self>(json);
+        }
+     }
+};}
+
+/// String json
+#[macro_export]
+macro_rules! impl_from_string_json {($type:ty) => {
+    impl<'de> locatch_macro::FromJson<'de, String> for $type {
+        fn from_json(json: String) -> Result<Self, locatch_macro::JsonError> {
+            serde_json::de::from_str::<Self>(&json)
+        }
+    }
 };}
 
 pub trait ToJson: Serialize {

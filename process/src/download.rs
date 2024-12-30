@@ -1,11 +1,9 @@
 use reqwest::Client;
 
+use tokio::task::*;
 use tokio::runtime::Runtime;
 use std::future::*;
 use std::sync::{Arc, Mutex};
-use std::task::Context;
-use std::task::Poll;
-use std::pin::*;
 
 use locatch_macro::*;
 use locatch_lib::*;
@@ -27,49 +25,93 @@ fn download_unlimited(
     todo!()
 }
 
-type DownloadSpool = Arc<Mutex<TicketMaster>>;
+type TicketSpool = (
+    // tickets
+    std::vec::IntoIter<Ticket>,
+    // results
+    Vec<Result<(), LocatchErr>>
+);
 
-struct TicketMaster {
-    tickets: std::vec::IntoIter<Ticket>,
-    results: Vec<Result<(), LocatchErr>>,
-}
-
-fn download_with_limit(
+async fn download_with_limit(
     runtime: &mut Runtime,
     client: &Client, cobalt_url: &str, limit: usize, 
     tickets: Vec<Ticket>,
 ) -> Vec<Result<(), LocatchErr>> { 
-    let output: Vec<Result<(), LocatchErr>> = Vec::with_capacity(tickets.len());
-    let spool = Arc::new(Mutex::new(
-        (tickets.into_iter(), output)
-    ));
+    let len = tickets.len();
+    let mut tickets = tickets.into_iter();
+    let mut init = Vec::with_capacity(limit);
+    let output= Vec::with_capacity(len);
 
-    todo!()
+    for _ in 0..limit {
+        let Some(ticket) = tickets.next() else {
+            break;
+        };
+
+        init.push(ticket);
+    }
+    let init = init.into_iter();
+
+    let mut spool = Mutex::new(
+        (tickets.into_iter(), output)
+    );
+
+    let mut set = JoinSet::new();
+    for ticket in init {
+        set.spawn_local( unsafe { into_download_thread(&mut spool, client, cobalt_url, ticket) });
+    }
+
+    // await
+    set.join_all().await;
+
+    let (_, results) = match spool.into_inner() {
+        Ok(ok) => ok,
+        Err(_) => panic!(),
+    };
+
+    return results;
 }
 
-async fn download_thread(
-    spool: DownloadSpool,
-    client: &Client, cobalt_url: &str,
+// An Arc isn't needed because the thread is joined before the scope ends.
+/// It is expected that the thread is joined before the outer scope ends.
+#[inline]
+async unsafe fn into_download_thread(
+    spool: *mut Mutex<TicketSpool>,
+    client: *const Client, cobalt_url: *const str,
+    ticket: Ticket
+) {
+    return download_thread(spool, client, cobalt_url, 
+        into_download(ticket, client.as_ref_unchecked(), cobalt_url.as_ref_unchecked())
+    ).await
+}
+
+// awaits the pending download.
+// Adds the result to spool, and takes a ticket to start a new download.
+// Continues until spool has no tickets.
+/// It is expected that the thread is joined before the outer scope ends.
+#[inline]
+async unsafe fn download_thread(
+    spool: *mut Mutex<TicketSpool>,
+    client: *const Client, cobalt_url: *const str,
     pending: PendingDownload!(),
 ) {
     let result = pending.await;
 
-    let mut lock = match spool.lock() {
+    let mut lock = match unsafe { spool.as_mut_unchecked() }.lock() {
         Ok(ok) => ok,
-        Err(err) => {
-            // todo log
-            spool.clear_poison();
-            spool.lock().unwrap()
+        Err(_) => {
+            panic!();
         },
     };
 
-    lock.results.push(result);
-    let Some(ticket) = lock.tickets.next() else {
+    lock.1.push(result); // push results
+    let Some(ticket) = lock.0.next() /* next ticket */ else {
         return;
     };
     drop(lock);
 
-    return download_thread(spool, client, cobalt_url, into_download(ticket, client, cobalt_url)).await
+    return download_thread(spool, client, cobalt_url, 
+        into_download(ticket, client.as_ref_unchecked(), cobalt_url.as_ref_unchecked())
+    ).await
 }
 
 async fn into_download(ticket: Ticket, client: &Client, cobalt_url: &str) -> Result<(), LocatchErr> {

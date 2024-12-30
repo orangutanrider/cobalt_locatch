@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-pub use std::future::Future;
-
 pub type IOError = std::io::Error;
 pub type JsonError = serde_json::Error;
 pub type ReqError = reqwest::Error;

@@ -1,3 +1,5 @@
+#![feature(ptr_as_ref_unchecked)]
+
 mod serial_input;
 mod cli;
 mod reception;

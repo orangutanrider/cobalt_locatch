@@ -1,6 +1,7 @@
 use reqwest::Client;
 
 use tokio::task::*;
+use std::ops::Deref;
 use std::sync::Mutex;
 
 use locatch_macro::*;
@@ -26,9 +27,9 @@ async fn download_unlimited(
     tickets: Vec<Ticket>
 ) -> Vec<Result<(), LocatchErr>> {
     let mut set = JoinSet::new();
-
+    
     for ticket in tickets.into_iter() {
-        set.spawn_local(unsafe { download_one_shot_thread(ticket, client, cobalt_url) });
+        set.spawn(unsafe { download_one_shot_thread(ticket, UnsafeSend(client), UnsafeSend(cobalt_url)) });
     }
 
     return set.join_all().await;
@@ -48,7 +49,7 @@ async fn download_with_limit(
     let mut output = Mutex::new(output);
 
     for _ in 0..limit {
-        set.spawn_local(unsafe { download_unravel_thread(&mut spool, &mut output, client, cobalt_url) });
+        set.spawn(unsafe { download_unravel_thread(UnsafeSend(&mut spool), UnsafeSend(&mut output), UnsafeSend(client), UnsafeSend(cobalt_url)) });
     }
 
     set.join_all().await;
@@ -59,40 +60,54 @@ async fn download_with_limit(
     };
 }
 
+struct UnsafeSend<T> (T);
+unsafe impl<T> Send for UnsafeSend<T> { }
+impl<T> Deref for UnsafeSend<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 // An Arc isn't needed because the thread is joined before the scope ends.
 /// It will process tickets from the spool, adding them to the output, until no tickets are left.  
 /// Unsafe: It is expected that the thread is joined before any of this function's inputs are dropped.
 #[inline]
 async unsafe fn download_unravel_thread(
-    spool: *mut Mutex<std::vec::IntoIter<Ticket>>,
-    output: *mut Mutex<Vec<Result<(), LocatchErr>>>,
-    client: *const Client, cobalt_url: *const str,
+    spool: UnsafeSend<*mut Mutex<std::vec::IntoIter<Ticket>>>,
+    output: UnsafeSend<*mut Mutex<Vec<Result<(), LocatchErr>>>>,
+    client: UnsafeSend<*const Client>, cobalt_url: UnsafeSend<*const str>,
 ) {
     loop {
-        let mut spool_lock = match unsafe { spool.as_mut_unchecked() }.lock() {
-            Ok(ok) => ok,
-            Err(_) => {
-                panic!();
-            },
-        };
+        let ticket = {
+            let mut spool_lock = match unsafe { spool.as_mut_unchecked() }.lock() {
+                Ok(ok) => ok,
+                Err(_) => {
+                    panic!();
+                },
+            };
 
-        let Some(ticket) = spool_lock.next() else {
-            return;
+            let Some(ticket) = spool_lock.next() else {
+                return;
+            };
+
+            ticket
         };
-        drop(spool_lock); // drop lock before await
         
         // await 
         let result = into_download(ticket, client.as_ref_unchecked(), cobalt_url.as_ref_unchecked()).await;
 
-        let mut output_lock = match unsafe { output.as_mut_unchecked() }.lock() {
-            Ok(ok) => ok,
-            Err(_) => {
-                panic!();
-            },
-        };
+        {
+            let mut output_lock = match unsafe { output.as_mut_unchecked() }.lock() {
+                Ok(ok) => ok,
+                Err(_) => {
+                    panic!();
+                },
+            };
 
-        output_lock.push(result);
-        drop(output_lock);
+            output_lock.push(result);
+        }
 
         yield_now().await; // drop lock before await; Yield to other threads.
     }
@@ -103,11 +118,10 @@ async unsafe fn download_unravel_thread(
 #[inline]
 async unsafe fn download_one_shot_thread(
     ticket: Ticket,
-    client: *const Client, cobalt_url: *const str, 
+    client: UnsafeSend<*const Client>, cobalt_url: UnsafeSend<*const str>, 
 ) -> Result<(), LocatchErr> {
     return into_download(ticket, client.as_ref_unchecked(), cobalt_url.as_ref_unchecked()).await;
 }
-
 
 #[inline]
 async fn into_download(ticket: Ticket, client: &Client, cobalt_url: &str) -> Result<(), LocatchErr> {

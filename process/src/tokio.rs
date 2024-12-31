@@ -13,8 +13,7 @@ pub fn new_async_runtime(thread_count: &Option<usize>, stack_size: &Option<usize
         runtime.thread_stack_size(*stack_size);
     }
 
-    runtime.enable_all();
+    runtime.enable_io();
     
-
     return runtime.build();
 }

@@ -1,3 +1,8 @@
+// This is an experiment.
+// At the time of creation it is the same as download, but it decouples into_download by making it a closure instead of a generic trait.
+// Could maybe create an implementation that allows for both.
+// No need for that right now though.
+
 use reqwest::Client;
 
 use tokio::task::*;
@@ -12,34 +17,37 @@ use crate::serial_input::*;
 use crate::request;
 
 #[inline]
-pub async fn into_downloads<D: IntoDownload>(
+async fn into_downloads(
     client: &Client, cobalt_url: &str, concurrent_download_limit: Option<usize>, 
-    tickets: Vec<Ticket>
+    tickets: Vec<Ticket>,
+    into: impl IntoDownload
 ) -> Vec<Result<(), LocatchErr>> {
     return match concurrent_download_limit {
-        Some(limit) => download_with_limit::<D>(client, cobalt_url, limit, tickets).await,
-        None => download_unlimited::<D>(client, cobalt_url, tickets).await,
+        Some(limit) => download_with_limit(client, cobalt_url, limit, tickets, into).await,
+        None => download_unlimited(client, cobalt_url, tickets, into).await,
     }
 }
 
 #[inline]
-async fn download_unlimited<D: IntoDownload>(
+async fn download_unlimited(
     client: &Client, cobalt_url: &str,
-    tickets: Vec<Ticket>
+    tickets: Vec<Ticket>,
+    into: impl IntoDownload,
 ) -> Vec<Result<(), LocatchErr>> {
     let mut set = JoinSet::new();
     
     for ticket in tickets.into_iter() {
-        set.spawn(unsafe { download_one_shot_thread::<D>(ticket, UnsafeSend(client), UnsafeSend(cobalt_url)) });
+        set.spawn(unsafe { download_one_shot_thread(ticket, UnsafeSend(client), UnsafeSend(cobalt_url), into) });
     }
 
     return set.join_all().await;
 }
 
 #[inline]
-async fn download_with_limit<D: IntoDownload>(
+async fn download_with_limit(
     client: &Client, cobalt_url: &str, limit: usize, 
     tickets: Vec<Ticket>,
+    into: impl IntoDownload
 ) -> Vec<Result<(), LocatchErr>> { 
     let len = tickets.len();
     let tickets = tickets.into_iter();
@@ -50,7 +58,7 @@ async fn download_with_limit<D: IntoDownload>(
     let mut output = Mutex::new(output);
 
     for _ in 0..limit {
-        set.spawn(unsafe { download_unravel_thread::<D>(UnsafeSend(&mut spool), UnsafeSend(&mut output), UnsafeSend(client), UnsafeSend(cobalt_url)) });
+        set.spawn(unsafe { download_unravel_thread(UnsafeSend(&mut spool), UnsafeSend(&mut output), UnsafeSend(client), UnsafeSend(cobalt_url), into) });
     }
 
     set.join_all().await;
@@ -65,10 +73,11 @@ async fn download_with_limit<D: IntoDownload>(
 /// It will process tickets from the spool, adding them to the output, until no tickets are left.  
 /// Unsafe: It is expected that the thread is joined before any of the inputs are dropped.
 #[inline]
-async unsafe fn download_unravel_thread<D: IntoDownload>(
+async unsafe fn download_unravel_thread(
     spool: UnsafeSend<*mut Mutex<std::vec::IntoIter<Ticket>>>,
     output: UnsafeSend<*mut Mutex<Vec<Result<(), LocatchErr>>>>,
     client: UnsafeSend<*const Client>, cobalt_url: UnsafeSend<*const str>,
+    into: impl IntoDownload
 ) {
     loop {
         let ticket = {
@@ -87,7 +96,7 @@ async unsafe fn download_unravel_thread<D: IntoDownload>(
         };
         
         // await 
-        let result = D::into_download(ticket, client.as_ref_unchecked(), cobalt_url.as_ref_unchecked()).await;
+        let result = into.into_download(ticket, client.as_ref_unchecked(), cobalt_url.as_ref_unchecked()).await;
 
         {
             let mut output_lock = match unsafe { output.as_mut_unchecked() }.lock() {
@@ -107,34 +116,38 @@ async unsafe fn download_unravel_thread<D: IntoDownload>(
 // An Arc isn't needed because the thread is joined before the scope ends.
 /// Unsafe: It is expected that the thread is joined before any of the inputs are dropped.
 #[inline]
-async unsafe fn download_one_shot_thread<D: IntoDownload>(
+async unsafe fn download_one_shot_thread(
     ticket: Ticket,
     client: UnsafeSend<*const Client>, cobalt_url: UnsafeSend<*const str>, 
+    into: impl IntoDownload
 ) -> Result<(), LocatchErr> {
-    return D::into_download(ticket, client.as_ref_unchecked(), cobalt_url.as_ref_unchecked()).await;
+    return into.into_download(ticket, client.as_ref_unchecked(), cobalt_url.as_ref_unchecked()).await;
 }
 
-pub trait IntoDownload: 'static {
-    fn into_download(ticket: Ticket, client: &Client, cobalt_url: &str) -> impl Future<Output = Result<(), LocatchErr>> + Send;
+trait IntoDownload: Copy + Send +'static {
+    fn into_download(&self, ticket: Ticket, client: &Client, cobalt_url: &str) -> impl Future<Output = Result<(), LocatchErr>> + Send;
 }
 
-pub struct CobaltDownload;
-impl IntoDownload for CobaltDownload {
-    async fn into_download(ticket: Ticket, client: &Client, cobalt_url: &str) -> Result<(), LocatchErr> {
-        // post
-        let (response, ticket) = request(client, cobalt_url, ticket).await;
+impl<T: Fn(Ticket, &Client, &str) -> Result<(), LocatchErr> + Copy + Send + Sync + 'static> IntoDownload for T {
+    async fn into_download(&self, ticket: Ticket, client: &Client, cobalt_url: &str) -> Result<(), LocatchErr> {
+        self(ticket, client, cobalt_url)
+    }
+}
 
-        let response = match response {
-            Ok(ok) => ok,
-            Err(err) => return Err(err),
-        };
+async fn into_cobalt_download(ticket: Ticket, client: &Client, cobalt_url: &str) -> Result<(), LocatchErr> {
+    // post
+    let (response, ticket) = request(client, cobalt_url, ticket).await;
 
-        match response {
-            PostResponse::Redirect(tunnel) => return tunnel_download(client, tunnel, ticket).await,
-            PostResponse::Tunnel(tunnel) => return tunnel_download(client, tunnel, ticket).await,
-            PostResponse::Picker(_picker) => todo!(),
-            PostResponse::Error(_error) => todo!(),
-        }
+    let response = match response {
+        Ok(ok) => ok,
+        Err(err) => return Err(err),
+    };
+
+    match response {
+        PostResponse::Redirect(tunnel) => return tunnel_download(client, tunnel, ticket).await,
+        PostResponse::Tunnel(tunnel) => return tunnel_download(client, tunnel, ticket).await,
+        PostResponse::Picker(_picker) => todo!(),
+        PostResponse::Error(_error) => todo!(),
     }
 }
 

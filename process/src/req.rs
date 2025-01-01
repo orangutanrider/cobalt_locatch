@@ -5,13 +5,13 @@ use crate::serial_input::{Ticket, SentTicket};
 
 use reqwest::Client;
 
-pub(crate) async fn request<R: ReqRequest>(
+pub(crate) async fn request(
     client: &Client, cobalt_url: &str, ticket: Ticket
 ) -> (Result<PostResponse, LocatchErr>, SentTicket) {
     let (sent, request) = ticket.to_send();
 
     let response = match request.to_json() {
-        Ok(body) => R::request(client, cobalt_url, body).await, // send
+        Ok(body) => post_cobalt(client, cobalt_url, body).await, // send
         Err(err) => {
             return (Err(LocatchErr::Json(err)), sent)
         },

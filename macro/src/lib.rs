@@ -1,6 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::future::Future;
-use reqwest::{Client, Response};
 
 pub mod unsafe_lib;
 
@@ -23,10 +21,6 @@ impl std::fmt::Display for LocatchErr {
             LocatchErr::Empty => write!(f, "empty"),
         }
     }
-}
-
-pub trait ReqRequest: 'static { 
-    fn request<T: Into<reqwest::Body>>(client: &Client, url: &str, body: T) -> impl Future<Output = Result<Response, ReqError>>;
 }
 
 pub trait FromJson<'de, T>: Deserialize<'de> {

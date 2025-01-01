@@ -122,7 +122,7 @@ pub struct CobaltDownload;
 impl IntoDownload for CobaltDownload {
     async fn into_download(ticket: Ticket, client: &Client, cobalt_url: &str) -> Result<(), LocatchErr> {
         // post
-        let (response, ticket) = request::<CobaltReqRequest>(client, cobalt_url, ticket).await;
+        let (response, ticket) = request(client, cobalt_url, ticket).await;
 
         let response = match response {
             Ok(ok) => ok,

@@ -15,26 +15,14 @@ use reqwest::{
     Response,
 };
 
-pub struct CobaltReqRequest;
-impl ReqRequest for CobaltReqRequest {
-    #[inline]
-    fn request<T: Into<reqwest::Body>>(client: &Client, url: &str, body: T) -> impl Future<Output = Result<Response, ReqError>> {
-        return client.post(url)
+#[inline]
+pub fn post_cobalt<T: Into<reqwest::Body>>(client: &Client, cobalt_url: &str, body: T) -> PendingResponse!() { 
+    return client.post(cobalt_url)
         .header(ACCEPT, "application/json")
         .header(CONTENT_TYPE, "application/json")
         .body(body)
         .send();
-    }
 }
-
-// #[inline]
-// pub fn post_cobalt<T: Into<reqwest::Body>>(client: &Client, cobalt_url: &str, body: T) -> PendingResponse!() { 
-//     return client.post(cobalt_url)
-//         .header(ACCEPT, "application/json")
-//         .header(CONTENT_TYPE, "application/json")
-//         .body(body)
-//         .send();
-// }
 
 pub fn filter_responses(
     iter: std::vec::IntoIter<PostResponse>,

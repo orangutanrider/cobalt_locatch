@@ -84,3 +84,53 @@ async fn blocking_reception(cli: &Cli) -> Result<RecievedInput, LocatchErr> {
     // return
     return Ok((config, list))
 }
+
+#[cfg(test)]
+mod test {
+    use serde_json::json;
+
+    use super::blocking_reception;
+
+    #[tokio::test]
+    async fn no_macro_blocking_reception() {
+        let cli = crate::Cli{ 
+            list: "list.json".into(), 
+            config: Some("config.json".into()), 
+            output: None, 
+            filename_macro: None, 
+            ticket_macro: None 
+        };
+
+        let list = json!{{
+            "tickets": [
+                {
+                    "url":"https://www.youtube.com/watch?v=foobar",
+                    "filename":"foobar"
+                },
+            ],
+        }}.to_string();
+
+        let config = json!{{
+            "cobalt_url": "https://foobar.com",
+        }}.to_string();
+
+        match tokio::fs::write("list.json", list).await {
+            Ok(_) => {/* Do nothing */},
+            Err(err) => panic!("{}", err),
+        }
+
+        match tokio::fs::write("config.json", config).await {
+            Ok(_) => {/* Do nothing */},
+            Err(err) => panic!("{}", err),
+        }
+
+        match blocking_reception(&cli).await {
+            Ok((config, list)) => {
+                assert_eq!(config.cobalt_url, "https://foobar.com");
+                assert_eq!(list.tickets[0].url, "https://www.youtube.com/watch?v=foobar");
+                assert_eq!(list.tickets[0].filename, Some("foobar".to_owned()));
+            },
+            Err(err) => panic!("{}", err),
+        }
+    }
+}

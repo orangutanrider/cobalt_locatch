@@ -150,3 +150,126 @@ async fn tunnel_download(client: &Client, tunnel: TunnelResponse, ticket: SentTi
     let filename = sanitize_filename::sanitize(filename);
     return download(client, &tunnel.url, &filename).await
 }
+
+#[cfg(test)]
+mod test {
+    use core::panic;
+
+    use super::*;
+
+    struct OkDownload; 
+    impl IntoDownload for OkDownload {
+        async fn into_download(_ticket: Ticket, _client: &Client, _cobalt_url: &str) -> Result<(), LocatchErr> {
+            return Ok(())
+        }
+    }
+
+    struct ErrDownload; 
+    impl IntoDownload for ErrDownload {
+        async fn into_download(_ticket: Ticket, _client: &Client, _cobalt_url: &str) -> Result<(), LocatchErr> {
+            return Err(LocatchErr::Empty)
+        }
+    }
+
+    fn test_ticket() -> Ticket {
+        Ticket {
+            url: "empty".to_owned(),
+            filename: Some("test_ticket".to_owned()),
+            ..Default::default()
+        }
+    }
+    
+    const TEST_TICKETS_SIZE: usize = 10;
+    fn test_tickets() -> Vec<Ticket> {
+        let mut vec = Vec::with_capacity(TEST_TICKETS_SIZE);
+        for _ in 0..TEST_TICKETS_SIZE {
+            vec.push(test_ticket());
+        }
+
+        return vec;
+    }
+
+    #[tokio::test]
+    async fn ok_download_unlimited_test() {
+        let client = &Client::new();
+        let cobalt_url: &str = "empty";
+
+        let results = download_unlimited::<OkDownload>(client, cobalt_url, test_tickets()).await;
+
+        assert_eq!(results.len(), TEST_TICKETS_SIZE);
+        for result in results.into_iter() {
+            match result {
+                Ok(_) => {/* Do nothing */},
+                Err(err) => {
+                    panic!("{}", err);
+                },
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn ok_download_limited_test() {
+        let client = &Client::new();
+        let cobalt_url: &str = "empty";
+
+        const LIMIT: usize = 2;
+        let results = download_with_limit::<OkDownload>(client, cobalt_url, LIMIT, test_tickets()).await;
+
+        assert_eq!(results.len(), TEST_TICKETS_SIZE);
+        for result in results.into_iter() {
+            match result {
+                Ok(_) => {/* Do nothing */},
+                Err(err) => {
+                    panic!("{}", err);
+                },
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn err_download_unlimited_test() {
+        let client = &Client::new();
+        let cobalt_url: &str = "empty";
+
+        let results = download_unlimited::<ErrDownload>(client, cobalt_url, test_tickets()).await;
+
+        assert_eq!(results.len(), TEST_TICKETS_SIZE);
+        for result in results.into_iter() {
+            match result {
+                Ok(_) => { panic!("an Ok() value was returned") }
+                Err(err) => {
+                    match err {
+                        LocatchErr::Io(err) => { panic!("an unexpected Io err was returned: {}", err) },
+                        LocatchErr::Json(err) => { panic!("an unexpected Json err was returned: {}", err) },
+                        LocatchErr::Req(err) => { panic!("an unexpected Req err was returned: {}", err) },
+                        LocatchErr::Empty => {/* Do nothing */},
+                    }
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn err_download_limited_test() {
+        let client = &Client::new();
+        let cobalt_url: &str = "empty";
+
+        const LIMIT: usize = 2;
+        let results = download_with_limit::<ErrDownload>(client, cobalt_url, LIMIT, test_tickets()).await;
+
+        assert_eq!(results.len(), TEST_TICKETS_SIZE);
+        for result in results.into_iter() {
+            match result {
+                Ok(_) => { panic!("an Ok() value was returned") }
+                Err(err) => {
+                    match err {
+                        LocatchErr::Io(err) => { panic!("an unexpected Io err was returned: {}", err) },
+                        LocatchErr::Json(err) => { panic!("an unexpected Json err was returned: {}", err) },
+                        LocatchErr::Req(err) => { panic!("an unexpected Req err was returned: {}", err) },
+                        LocatchErr::Empty => {/* Do nothing */},
+                    }
+                }
+            }
+        }
+    }
+}

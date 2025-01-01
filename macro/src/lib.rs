@@ -10,6 +10,17 @@ pub enum LocatchErr {
     Io(IOError),
     Json(JsonError),
     Req(ReqError),
+    Empty
+}
+impl std::fmt::Display for LocatchErr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LocatchErr::Io(error) => write!(f, "{}", error),
+            LocatchErr::Json(error) => write!(f, "{}", error),
+            LocatchErr::Req(error) => write!(f, "{}", error),
+            LocatchErr::Empty => write!(f, "empty"),
+        }
+    }
 }
 
 pub trait FromJson<'de, T>: Deserialize<'de> {

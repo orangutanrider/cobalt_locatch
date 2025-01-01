@@ -41,6 +41,19 @@ pub(crate) async fn request<R: ReqRequest>(
     return (Ok(response), sent)
 }
 
+#[cfg(test)]
+mod test {
+    use locatch_macro::{ReqError, ReqRequest};
+
+    struct TestPost;
+    impl ReqRequest for TestPost {
+        async fn request<T: Into<reqwest::Body>>(client: &reqwest::Client, url: &str, body: T) -> Result<reqwest::Response, locatch_macro::ReqError> {
+            // hmm...
+            todo!()
+        }
+    }
+}
+
 /* 
 pub async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), ReqError> {
     let response = match client.get(cobalt_url).send().await {

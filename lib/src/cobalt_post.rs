@@ -1,4 +1,4 @@
-//! Cobalt response representation
+//! Cobalt response representation and post
 
 use locatch_macro::*;
 
@@ -8,24 +8,15 @@ use std::{
 };
 
 use serde::Deserialize;
-use serde_json::{Number, Value};
+use serde_json::Number;
 use reqwest::{
     header::{ACCEPT, CONTENT_TYPE},
     Client,
     Response,
-    Error as ReqError
 };
 
-macro_rules! into_response {($enum:ident, $t:ty, $json:ident) => {{
-        let response: $t = match serde_json::from_str($json) {
-            Ok(ok) => ok,
-            Err(_) => return Err(()),
-        };
-        return Ok(PostResponse::$enum(response));
-}};}
-
 #[inline]
-pub fn post_cobalt<T: Into<reqwest::Body>>(client: &Client, cobalt_url: &str, body: T) -> impl Future<Output = Result<Response, ReqError>> { 
+pub fn post_cobalt<T: Into<reqwest::Body>>(client: &Client, cobalt_url: &str, body: T) -> PendingResponse!() { 
     return client.post(cobalt_url)
         .header(ACCEPT, "application/json")
         .header(CONTENT_TYPE, "application/json")
@@ -39,7 +30,7 @@ pub fn filter_responses(
     pickers: &mut Vec<PickerResponse>,
     tunnels: &mut Vec<TunnelResponse>,
 ) {
-    for response in iter { // par SIMD possible?
+    for response in iter {
         match response {
             PostResponse::Error(error_response) => errors.push(error_response),
             PostResponse::Picker(picker_response) => pickers.push(picker_response),
@@ -56,7 +47,7 @@ pub enum PostResponse {
     Redirect(RedirectResponse),
     Tunnel(TunnelResponse),
 }
-impl_from_json!(PostResponse);
+impl_from_str_json!(PostResponse);
 
 enum Status {
     Error,
@@ -80,6 +71,7 @@ impl FromStr for Status {
 
 #[derive(Deserialize)]
 pub struct ErrorResponse {
+    #[allow(dead_code)]
     status: String,
     pub error: ErrorObj,
 }
@@ -99,6 +91,7 @@ pub struct ErrorContextObj {
 type RedirectResponse = TunnelResponse;
 #[derive(Deserialize)]
 pub struct TunnelResponse {
+    #[allow(dead_code)]
     status: String,
     pub url: String,
     pub filename: String,
@@ -107,6 +100,7 @@ pub struct TunnelResponse {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PickerResponse {
+    #[allow(dead_code)]
     status: String,
     pub audio: Option<String>,
     pub audio_filename: Option<String>,

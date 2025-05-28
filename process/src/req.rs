@@ -1,21 +1,47 @@
 use locatch_macro::*;
 use locatch_lib::*;
 
-use crate::SerialInput;
+use crate::serial_input::{Ticket, SentTicket};
 
-use std::future::Future;
-use reqwest::{Client, Response};
+use reqwest::Client;
 
-//type PendingRequest = impl Future<Output = Result<Response, ReqError>>;
-macro_rules! PendingRequest {() => {
-    impl Future<Output = Result<Response, ReqError>>
-};}
+pub(crate) async fn request(
+    client: &Client, cobalt_url: &str, ticket: Ticket
+) -> (Result<PostResponse, LocatchErr>, SentTicket) {
+    let (sent, request) = ticket.to_send();
 
-//type PendingText = impl Future<Output = Result<String, ReqError>>;
-macro_rules! PendingText {() => {
-    impl Future<Output = Result<String, ReqError>>
-};}
+    let response = match request.to_json() {
+        Ok(body) => post_cobalt(client, cobalt_url, body).await, // send
+        Err(err) => {
+            return (Err(LocatchErr::Json(err)), sent)
+        },
+    };
 
+    // unwrap
+    let response = match response {
+        Ok(ok) => ok,
+        Err(err) => return (Err(LocatchErr::Req(err)), sent),
+    };
+
+    // text
+    let response = response.text().await;
+
+    // unwrap
+    let response = match response {
+        Ok(ok) => ok,
+        Err(err) => return (Err(LocatchErr::Req(err)), sent),
+    };
+
+    // deserialize
+    let response = match PostResponse::from_json(&response) {
+        Ok(ok) => ok,
+        Err(err) => return (Err(LocatchErr::Json(err)), sent),
+    };
+
+    return (Ok(response), sent)
+}
+
+/* 
 pub async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), ReqError> {
     let response = match client.get(cobalt_url).send().await {
         Ok(ok) => {
@@ -53,29 +79,34 @@ pub async fn get_cobalt(client: &Client, cobalt_url: &str) -> Result<(), ReqErro
     Ok(())
 }
 
-pub fn make_requests(client: &Client, cobalt_url: &str, input: &SerialInput, len: usize) -> Vec<PendingRequest!()> {
+pub fn make_requests(
+    client: &Client, cobalt_url: &str, list: List, len: usize,
+) -> (Vec<PendingResponse!()>, Vec<SentTicket>) {
     let mut futures = Vec::with_capacity(len);
+    let mut ticket_output = Vec::with_capacity(len);
+    
+    // simd
+    for ticket in list.tickets.into_iter() { 
+        let (sent, request) = ticket.to_send();
+        ticket_output.push(sent);
 
-    for request in input.requests.iter() { // par SIMD possible?
         match request.to_json() {
             Ok(body) => futures.push(post_cobalt(client, cobalt_url, body)),
             Err(err) => {
-                println!("Error: {}", err);
-                println!("A request could not be serialized"); 
-                println!("Logging unimplemented"); //todo!
-                //warn!("");
+                println!("A request could not be serialized, error: {}", err);
                 continue;
             },
         };
     }
-
-    return futures;
+    
+    return (futures, ticket_output);
 }
 
-pub async fn unwrap_responses(requests: Vec<PendingRequest!()>, len: usize) -> Vec<Response> {
+pub async fn unwrap_responses(requests: Vec<PendingResponse!()>, len: usize) -> Vec<Response> {
     let mut responses = Vec::with_capacity(len);
 
-    for future in requests.into_iter() { // par SIMD possible?
+    // simd
+    for future in requests.into_iter() {
         match future.await {
             Ok(ok) => responses.push(ok),
             Err(err) => {
@@ -138,3 +169,4 @@ pub async fn unwrap_pending_texts(pending_texts: Vec<PendingText!()>, len: usize
 
     return texts;
 }
+*/

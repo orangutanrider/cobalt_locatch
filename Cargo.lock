@@ -579,6 +579,7 @@ dependencies = [
 name = "locatch_macro"
 version = "0.1.0"
 dependencies = [
+ "reqwest",
  "serde",
  "serde_json",
 ]
@@ -593,6 +594,8 @@ dependencies = [
  "reqwest",
  "sanitize-filename",
  "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

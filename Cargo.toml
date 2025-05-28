@@ -18,7 +18,7 @@ futures-util = "0.3.30"
 sanitize-filename = "0.6.0"
 clap = { version = "4.5.13", features = ["derive"] }
 reqwest = { version = "0.12.7", features = ["stream"] }
-tokio = { version = "1.40.0", features = ["rt-multi-thread", "macros", "fs"] }
+tokio = { version = "1.40.0", features = ["rt", "rt-multi-thread", "macros", "fs"] }
 #encoding_rs = "0.8.34"
 #env_logger = "=0.11.5"
 #log = "0.4.22"
